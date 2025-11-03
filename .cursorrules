@@ -31,6 +31,14 @@
 - Fix all ruff errors and warnings before committing code
 - If you need to ignore a specific type check, use `# type: ignore[error-code]` with a specific error code and a comment explaining why
 
+## Architecture and Code Style Decisions
+
+- **Every architectural decision or code style choice must be documented in this `.cursorrules` file**
+- When making a new architectural decision (e.g., choosing a library, defining a pattern, establishing a convention), add it to the appropriate section in this file
+- When establishing a new code style guideline or convention, document it in this file
+- When adopting a new tool or framework that affects the project structure or coding standards, update this file accordingly
+- This ensures that all decisions are captured and can be consistently applied by the development team and AI assistants
+
 ## Architecture: Domain-Driven Development (DDD)
 
 The project follows a **Domain-Driven Development** architecture with the following structure:
@@ -63,6 +71,9 @@ gitlab_ticker/
    - Contain business entities and value objects
    - Must not depend on other layers (infrastructure, repositories, etc.)
    - Represent pure business logic
+   - **Complex arguments must be described and passed between functions as dataclasses**
+   - When functions require multiple related parameters, group them into a dataclass instead of passing them individually
+   - Dataclasses for domain arguments should be defined in the domain module (either in `value_objects.py` or in a dedicated `data_transfer_objects.py` file)
 
 2. **Repositories**
    - Define interfaces in `repositories/interfaces.py`
@@ -96,6 +107,37 @@ gitlab_ticker/
 - **Dependencies**: Domains must never depend on repositories or services
 - **Interfaces**: Use interfaces for repositories to enable testing and flexibility
 - **Tests**: Each domain, repository, and service must have corresponding unit tests
+- **Complex arguments as dataclasses**: Instead of passing many individual parameters, use dataclasses to group related data
+
+#### Example: Using Dataclasses for Complex Arguments
+
+```python
+# ❌ Bad: Too many individual parameters
+def process_commit(
+    repo_path: str,
+    branch_name: str,
+    commit_hash: str,
+    author: str,
+    message: str,
+    timestamp: datetime,
+    files_changed: int,
+) -> CommitSummary:
+    ...
+
+# ✅ Good: Grouped in a dataclass
+@dataclass(frozen=True)
+class CommitContext:
+    repo_path: str
+    branch_name: str
+    commit_hash: str
+    author: str
+    message: str
+    timestamp: datetime
+    files_changed: int
+
+def process_commit(context: CommitContext) -> CommitSummary:
+    ...
+```
 
 ## Important Poetry Commands
 
