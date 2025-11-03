@@ -1,0 +1,108 @@
+# GitLab Ticker Project Rules
+
+## Language and Environment
+
+- This project is developed in **Python 3.12+**
+- The project uses **Poetry** for dependency management and virtual environment
+- All dependencies must be added via `poetry add <package>`
+- The virtual environment must be activated via `poetry shell` or `poetry run <command>`
+
+## Code Language and Documentation
+
+- **Code, documentation, and comments must be written in English**, even if instructions are provided in another language
+- All variable names, function names, class names, and module names must be in English
+- All docstrings, comments, and documentation strings must be in English
+- README files, API documentation, and any written documentation must be in English
+- **The README.md file must be updated whenever a feature is added, modified, or removed**
+- When adding new features, update the "Features" section in README.md
+- When modifying existing features, update the relevant documentation sections
+- When removing features, remove them from the README.md documentation
+
+## Type Safety and Code Quality
+
+- **All code must be fully typed** with type hints (annotations)
+- All function parameters, return types, class attributes, and variables must have type annotations
+- Use `typing` module or built-in types (Python 3.12+) for type hints
+- **Every code change must be validated by both mypy and ruff before completion**
+- Run `poetry run mypy .` to check type correctness
+- Run `poetry run ruff check .` to check code quality and style
+- Run `poetry run ruff format .` to format code (optional, but recommended)
+- Fix all mypy errors and warnings before committing code
+- Fix all ruff errors and warnings before committing code
+- If you need to ignore a specific type check, use `# type: ignore[error-code]` with a specific error code and a comment explaining why
+
+## Architecture: Domain-Driven Development (DDD)
+
+The project follows a **Domain-Driven Development** architecture with the following structure:
+
+### Domain Structure
+
+Each domain must be organized in its own module with the following structure:
+
+```
+gitlab_ticker/
+  <domain_name>/
+    __init__.py
+    domain/          # Domain entities and value objects
+      __init__.py
+      entities.py    # Business entities
+      value_objects.py  # Value objects
+    repositories/    # Repository interfaces and implementations
+      __init__.py
+      interfaces.py  # Repository interfaces
+      implementations.py  # Concrete implementations
+    services/        # Business services
+      __init__.py
+      <service_name>.py
+    __init__.py
+```
+
+### Architecture Rules
+
+1. **Domains**
+   - Contain business entities and value objects
+   - Must not depend on other layers (infrastructure, repositories, etc.)
+   - Represent pure business logic
+
+2. **Repositories**
+   - Define interfaces in `repositories/interfaces.py`
+   - Implement repositories in `repositories/implementations.py`
+   - Interfaces define data access contracts
+   - Concrete implementations may depend on infrastructure
+
+3. **Services**
+   - Contain business logic that orchestrates domains and repositories
+   - May use multiple repositories
+   - Coordinate operations between different entities
+
+### Structure Example
+
+```
+gitlab_ticker/
+  projects/
+    domain/
+      entities.py        # Project entity
+      value_objects.py   # ProjectId, ProjectStatus, etc.
+    repositories/
+      interfaces.py      # ProjectRepository interface
+      implementations.py # ProjectRepositoryImpl
+    services/
+      project_service.py # ProjectService
+```
+
+### Best Practices
+
+- **Separation of concerns**: Each layer has a clear responsibility
+- **Dependencies**: Domains must never depend on repositories or services
+- **Interfaces**: Use interfaces for repositories to enable testing and flexibility
+- **Tests**: Each domain, repository, and service must have corresponding unit tests
+
+## Important Poetry Commands
+
+- `poetry install`: Install dependencies
+- `poetry add <package>`: Add a dependency
+- `poetry add --group dev <package>`: Add a development dependency
+- `poetry shell`: Activate the virtual environment
+- `poetry run <command>`: Run a command in the virtual environment
+- `poetry lock`: Update the lock file
+- `poetry update`: Update dependencies
