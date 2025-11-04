@@ -2,6 +2,9 @@
 
 from pathlib import Path
 
+from gitlab_ticker.git.domain.entities import CommitWithFiles
+from gitlab_ticker.git.domain.value_objects import CommitDiff, DiffSizeConfig
+from gitlab_ticker.git.services.file_filter_service import FileFilterService
 from gitlab_ticker.git.services.git_service import GitService
 from gitlab_ticker.summarization.domain.value_objects import CommitSummaryInput
 from gitlab_ticker.summarization.repositories.interfaces import LLMAgentRepository
@@ -14,6 +17,7 @@ class SummarizationService:
         self,
         git_service: GitService,
         llm_agent: LLMAgentRepository,
+        diff_size_config: DiffSizeConfig | None = None,
     ) -> None:
         """
         Initialize SummarizationService.
@@ -21,9 +25,12 @@ class SummarizationService:
         Args:
             git_service: Service for fetching git commit data
             llm_agent: Repository for LLM-based summarization
+            diff_size_config: Configuration for diff size limits. Defaults to DiffSizeConfig()
         """
         self._git_service = git_service
         self._llm_agent = llm_agent
+        self._diff_size_config = diff_size_config or DiffSizeConfig()
+        self._file_filter_service = FileFilterService()
 
     def summarize_commit(self, repo_path: Path, commit_hash: str) -> str:
         """
@@ -45,21 +52,88 @@ class SummarizationService:
                 repo_path, commit_hash
             )
 
+            # Filter out generated files
+            filtered_file_changes = tuple(
+                file_change
+                for file_change in commit_with_files.file_changes
+                if not self._file_filter_service.is_generated_file(file_change.file_path)
+            )
+
+            # Create filtered commit with files
+            filtered_commit_with_files = CommitWithFiles(
+                hash=commit_with_files.hash,
+                author=commit_with_files.author,
+                date=commit_with_files.date,
+                message=commit_with_files.message,
+                file_changes=filtered_file_changes,
+            )
+
             # Fetch diff content
             commit_diff = self._git_service.get_commit_diff_content(repo_path, commit_hash)
 
-            # Create input data
-            input_data = CommitSummaryInput(
-                commit=commit_with_files,
-                diff=commit_diff,
-            )
+            # Check if diff is too large
+            diff_size = len(commit_diff.diff_content)
+            is_diff_too_large = diff_size > self._diff_size_config.max_diff_size
 
-            # Generate summary using LLM agent
-            summary = self._llm_agent.summarize_commit(input_data)
+            if is_diff_too_large:
+                # Use tool calling approach
+                return self._summarize_with_tools(
+                    repo_path, commit_hash, filtered_commit_with_files
+                )
+            else:
+                # Use standard approach
+                input_data = CommitSummaryInput(
+                    commit=filtered_commit_with_files,
+                    diff=commit_diff,
+                )
+                summary = self._llm_agent.summarize_commit(input_data)
+                return summary
 
-            return summary
         except Exception as e:
             raise RuntimeError(
                 f"Failed to summarize commit {commit_hash}: {str(e)}"
             ) from e
+
+    def _summarize_with_tools(
+        self, repo_path: Path, commit_hash: str, commit_with_files: CommitWithFiles
+    ) -> str:
+        """
+        Generate a summary using tool calling for large diffs.
+
+        Args:
+            repo_path: Path to the git repository
+            commit_hash: Hash of the commit
+            commit_with_files: Commit data with filtered file changes
+
+        Returns:
+            Markdown-formatted summary of the commit
+        """
+        # Create input data with empty diff (we'll use tools instead)
+        empty_diff = CommitDiff(commit_hash=commit_hash, diff_content="")
+        input_data = CommitSummaryInput(
+            commit=commit_with_files,
+            diff=empty_diff,
+        )
+
+        # Create callback function for getting file diffs
+        def get_file_diff_callback(file_path: str) -> str:
+            """Callback to get diff for a specific file."""
+            return self._git_service.get_file_diff(repo_path, commit_hash, file_path)
+
+        # Check if agent supports tool calling
+        if hasattr(self._llm_agent, "summarize_commit_with_tools"):
+            return self._llm_agent.summarize_commit_with_tools(
+                input_data, get_file_diff_callback
+            )
+        else:
+            # Fallback: use standard approach even if large
+            # This should not happen with BaseLangChainAgent, but handle gracefully
+            input_data_with_diff = CommitSummaryInput(
+                commit=commit_with_files,
+                diff=CommitDiff(
+                    commit_hash=commit_hash,
+                    diff_content="[Diff too large - truncated]",
+                ),
+            )
+            return self._llm_agent.summarize_commit(input_data_with_diff)
 

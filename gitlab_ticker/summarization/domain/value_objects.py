@@ -22,5 +22,5 @@ class BatchProcessingInput:
     repo_path: Path
     commit_a: str
     commit_b: str
-    output_file: Path
+    output_dir: Path
 

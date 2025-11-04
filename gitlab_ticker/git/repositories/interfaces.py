@@ -51,3 +51,18 @@ class GitRepository(ABC):
         """
         ...
 
+    @abstractmethod
+    def get_file_diff(self, repo_path: Path, commit_hash: str, file_path: str) -> str:
+        """
+        Get the diff content for a specific file in a commit.
+
+        Args:
+            repo_path: Path to the git repository
+            commit_hash: Hash of the commit
+            file_path: Path to the file relative to repository root
+
+        Returns:
+            Diff content for the specific file
+        """
+        ...
+

@@ -5,7 +5,7 @@ Script to validate git repository parameters and generate commit summaries:
 - Branch name
 - Commit A hash
 - Commit B hash (optional, defaults to latest commit on branch)
-- Output file (optional, defaults to commit_summaries.md)
+- Output directory (optional, defaults to ./output)
 """
 
 import argparse
@@ -13,6 +13,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from gitlab_ticker.git.domain.value_objects import DiffSizeConfig
 from gitlab_ticker.git.repositories.implementations import GitRepositoryImpl
 from gitlab_ticker.git.services.git_service import GitService
 from gitlab_ticker.summarization.repositories.factory import create_llm_agent
@@ -178,13 +179,24 @@ def main() -> None:
         "--output",
         "-o",
         type=Path,
-        default=Path("commit_summaries.md"),
-        help="Output markdown file path (default: commit_summaries.md)",
+        default=Path("./output"),
+        help="Output directory path (default: ./output)",
     )
     parser.add_argument(
         "--skip-summarization",
         action="store_true",
         help="Skip summarization and only validate parameters",
+    )
+    parser.add_argument(
+        "--skip-empty-merges",
+        action="store_true",
+        help="Skip merge commits that contain no file changes",
+    )
+    parser.add_argument(
+        "--max-diff-size",
+        type=int,
+        default=50000,
+        help="Maximum diff size in characters before using tool calling (default: 50000)",
     )
 
     args = parser.parse_args()
@@ -224,7 +236,10 @@ def main() -> None:
             git_repo = GitRepositoryImpl()
             git_service = GitService(git_repo)
             llm_agent = create_llm_agent()
-            summarization_service = SummarizationService(git_service, llm_agent)
+            diff_size_config = DiffSizeConfig(max_diff_size=args.max_diff_size)
+            summarization_service = SummarizationService(
+                git_service, llm_agent, diff_size_config=diff_size_config
+            )
             batch_service = BatchSummarizationService(git_service, summarization_service)
 
             # Process commits and generate summaries
@@ -232,11 +247,12 @@ def main() -> None:
                 repo_path=args.repo_path,
                 commit_a=args.commit_a,
                 commit_b=commit_b,
-                output_file=args.output,
+                output_dir=args.output,
+                skip_empty_merges=args.skip_empty_merges,
             )
 
             print("✓ Summaries generated successfully!")
-            print(f"  Output file: {args.output.absolute()}")
+            print(f"  Output directory: {args.output.absolute()}")
             sys.exit(0)
 
         except ValueError as e:

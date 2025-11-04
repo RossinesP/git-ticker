@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from gitlab_ticker.git.domain.entities import Commit
 from gitlab_ticker.git.services.git_service import GitService
 from gitlab_ticker.summarization.domain.value_objects import BatchProcessingInput
 from gitlab_ticker.summarization.services.summarization_service import SummarizationService
@@ -30,16 +31,18 @@ class BatchSummarizationService:
         repo_path: Path,
         commit_a: str,
         commit_b: str,
-        output_file: Path,
+        output_dir: Path,
+        skip_empty_merges: bool = False,
     ) -> None:
         """
-        Process commits between two hashes and save summaries to markdown file.
+        Process commits between two hashes and save summaries to individual markdown files.
 
         Args:
             repo_path: Path to the git repository
             commit_a: Older commit hash (start of range)
             commit_b: Newer commit hash (end of range)
-            output_file: Path to the output markdown file
+            output_dir: Path to the output directory where commits_summaries/ will be created
+            skip_empty_merges: If True, skip merge commits that contain no file changes
 
         Raises:
             RuntimeError: If processing fails at any step
@@ -51,27 +54,41 @@ class BatchSummarizationService:
             )
 
             if not commits:
-                # Write empty file or header only
-                self._write_markdown_file(output_file, [], repo_path, commit_a, commit_b)
                 return
 
-            # Process each commit and collect summaries
-            summaries: list[tuple[str, str]] = []  # (commit_hash, summary)
-            for commit in commits:
+            # Filter out empty merge commits if requested
+            if skip_empty_merges:
+                filtered_commits: list[tuple[int, Commit]] = []
+                for commit in commits:
+                    if not self._git_service.is_empty_merge_commit(repo_path, commit.hash):
+                        filtered_commits.append((len(filtered_commits) + 1, commit))
+            else:
+                filtered_commits = [(idx + 1, commit) for idx, commit in enumerate(commits)]
+
+            if not filtered_commits:
+                return
+
+            # Create commits_summaries directory
+            commits_dir = output_dir / "commits_summaries"
+            commits_dir.mkdir(parents=True, exist_ok=True)
+
+            # Process each commit and write individual files
+            for sequence, commit in filtered_commits:
                 try:
                     summary = self._summarization_service.summarize_commit(
                         repo_path, commit.hash
                     )
-                    summaries.append((commit.hash, summary))
+                    self._write_commit_summary_file(
+                        commits_dir, sequence, commit.hash, summary
+                    )
                 except Exception as e:
                     # Continue processing other commits even if one fails
                     error_summary = (
                         f"**Error**: Failed to summarize commit {commit.hash}: {str(e)}"
                     )
-                    summaries.append((commit.hash, error_summary))
-
-            # Write all summaries to markdown file
-            self._write_markdown_file(output_file, summaries, repo_path, commit_a, commit_b)
+                    self._write_commit_summary_file(
+                        commits_dir, sequence, commit.hash, error_summary
+                    )
 
         except Exception as e:
             raise RuntimeError(
@@ -94,42 +111,31 @@ class BatchSummarizationService:
             input_data.repo_path,
             input_data.commit_a,
             input_data.commit_b,
-            input_data.output_file,
+            input_data.output_dir,
         )
 
     @staticmethod
-    def _write_markdown_file(
-        output_file: Path,
-        summaries: list[tuple[str, str]],
-        repo_path: Path,
-        commit_a: str,
-        commit_b: str,
+    def _write_commit_summary_file(
+        commits_dir: Path,
+        sequence: int,
+        commit_hash: str,
+        summary: str,
     ) -> None:
         """
-        Write commit summaries to a markdown file.
+        Write a single commit summary to a markdown file.
 
         Args:
-            output_file: Path to the output markdown file
-            summaries: List of (commit_hash, summary) tuples
-            repo_path: Path to the repository (for header)
-            commit_a: Start commit hash
-            commit_b: End commit hash
+            commits_dir: Directory where commit summary files are stored
+            sequence: Sequence number of the commit (1-based)
+            commit_hash: Full hash of the commit
+            summary: Markdown summary content for the commit
         """
-        # Ensure output directory exists
-        output_file.parent.mkdir(parents=True, exist_ok=True)
+        # Format filename: {sequence:04d}_{commit_hash[:8]}.md
+        filename = f"{sequence:04d}_{commit_hash[:8]}.md"
+        output_file = commits_dir / filename
 
         with output_file.open("w", encoding="utf-8") as f:
-            # Write header
-            f.write("# Commit Summaries\n\n")
-            f.write(f"**Repository**: `{repo_path}`\n")
-            f.write(f"**Commit Range**: `{commit_a}` .. `{commit_b}`\n")
-            f.write(f"**Total Commits**: {len(summaries)}\n\n")
-            f.write("---\n\n")
-
-            # Write each commit summary
-            for commit_hash, summary in summaries:
-                f.write(f"## Commit {commit_hash[:8]}\n\n")
-                f.write(f"**Full Hash**: `{commit_hash}`\n\n")
-                f.write(summary)
-                f.write("\n\n---\n\n")
+            f.write(summary)
+            if not summary.endswith("\n"):
+                f.write("\n")
 

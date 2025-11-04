@@ -171,6 +171,35 @@ class GitRepositoryImpl(GitRepository):
                 f"Failed to get commit diff: {e.stderr.decode() if e.stderr else str(e)}"
             ) from e
 
+    def get_file_diff(self, repo_path: Path, commit_hash: str, file_path: str) -> str:
+        """
+        Get the diff content for a specific file in a commit.
+
+        Args:
+            repo_path: Path to the git repository
+            commit_hash: Hash of the commit
+            file_path: Path to the file relative to repository root
+
+        Returns:
+            Diff content for the specific file
+        """
+        try:
+            result = subprocess.run(
+                ["git", "show", commit_hash, "--", file_path],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            return result.stdout
+        except subprocess.CalledProcessError as e:
+            error_msg = (
+                e.stderr.decode() if e.stderr else str(e)
+            )
+            raise RuntimeError(
+                f"Failed to get file diff for {file_path}: {error_msg}"
+            ) from e
+
     @staticmethod
     def _parse_status_to_change_type(status: str) -> FileChangeType:
         """Parse git status code to FileChangeType."""
