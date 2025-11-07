@@ -66,3 +66,35 @@ class GitRepository(ABC):
         """
         ...
 
+    @abstractmethod
+    def get_merge_base(self, repo_path: Path, branch_a: str, branch_b: str) -> str:
+        """
+        Get the merge base commit between two branches.
+
+        Args:
+            repo_path: Path to the git repository
+            branch_a: Name of the first branch
+            branch_b: Name of the second branch
+
+        Returns:
+            Hash of the merge base commit
+        """
+        ...
+
+    @abstractmethod
+    def get_diff_between_commits(
+        self, repo_path: Path, commit_a: str, commit_b: str
+    ) -> CommitDiff:
+        """
+        Get the diff content between two commits.
+
+        Args:
+            repo_path: Path to the git repository
+            commit_a: Hash of the older commit
+            commit_b: Hash of the newer commit
+
+        Returns:
+            CommitDiff containing the diff content between the two commits
+        """
+        ...
+

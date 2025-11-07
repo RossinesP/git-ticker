@@ -2,10 +2,11 @@
 """
 Script to validate git repository parameters and generate commit summaries:
 - Repository path
-- Branch name
-- Commit A hash
+- Branch name (main branch)
+- Commit A hash (optional if --dev-branch is used)
 - Commit B hash (optional, defaults to latest commit on branch)
 - Output directory (optional, defaults to ./output)
+- --dev-branch: Development branch name (optional, enables diff mode between branches)
 """
 
 import argparse
@@ -92,7 +93,7 @@ def is_commit_ancestor(repo_path: Path, commit_a: str, commit_b: str) -> bool:
 def validate_parameters(
     repo_path: Path,
     branch_name: str,
-    commit_a: str,
+    commit_a: str | None,
     commit_b: str | None,
 ) -> tuple[bool, str]:
     """
@@ -101,7 +102,7 @@ def validate_parameters(
     Args:
         repo_path: Path to the git repository
         branch_name: Name of the branch
-        commit_a: Hash of commit A
+        commit_a: Hash of commit A (None if not provided)
         commit_b: Hash of commit B (None if not provided)
 
     Returns:
@@ -120,6 +121,10 @@ def validate_parameters(
     # Validate branch
     if not branch_exists(repo_path, branch_name):
         return False, f"Branch '{branch_name}' does not exist in the repository"
+
+    # If commit_a is None, we're in dev-branch mode, so skip commit validation
+    if commit_a is None:
+        return True, "All parameters are valid (dev-branch mode)"
 
     # Validate commit A
     if not commit_exists(repo_path, commit_a):
@@ -145,6 +150,47 @@ def validate_parameters(
     return True, "All parameters are valid"
 
 
+def validate_dev_branch_parameters(
+    repo_path: Path,
+    main_branch: str,
+    dev_branch: str,
+) -> tuple[bool, str]:
+    """
+    Validate parameters for dev-branch mode and return (is_valid, error_message).
+
+    Args:
+        repo_path: Path to the git repository
+        main_branch: Name of the main branch
+        dev_branch: Name of the development branch
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    # Validate repository path
+    if not repo_path.exists():
+        return False, f"Repository path does not exist: {repo_path}"
+
+    if not repo_path.is_dir():
+        return False, f"Repository path is not a directory: {repo_path}"
+
+    if not is_git_repository(repo_path):
+        return False, f"Path is not a git repository: {repo_path}"
+
+    # Validate main branch
+    if not branch_exists(repo_path, main_branch):
+        return False, f"Main branch '{main_branch}' does not exist in the repository"
+
+    # Validate dev branch
+    if not branch_exists(repo_path, dev_branch):
+        return False, f"Development branch '{dev_branch}' does not exist in the repository"
+
+    # Check that branches are different
+    if main_branch == dev_branch:
+        return False, "Main branch and development branch must be different"
+
+    return True, "All parameters are valid"
+
+
 def main() -> None:
     """Main function to parse arguments, validate parameters, and generate summaries."""
     parser = argparse.ArgumentParser(
@@ -166,7 +212,9 @@ def main() -> None:
     parser.add_argument(
         "commit_a",
         type=str,
-        help="Hash of commit A (older commit)",
+        nargs="?",
+        default=None,
+        help="Hash of commit A (older commit, optional if --dev-branch is used)",
     )
     parser.add_argument(
         "commit_b",
@@ -174,6 +222,16 @@ def main() -> None:
         nargs="?",
         default=None,
         help="Hash of commit B (newer commit, defaults to latest commit on branch)",
+    )
+    parser.add_argument(
+        "--dev-branch",
+        type=str,
+        default=None,
+        help=(
+            "Development branch name. When specified, summarizes all commits "
+            "from the development branch that are not in the main branch. "
+            "In this mode, commit_a and commit_b are not required."
+        ),
     )
     parser.add_argument(
         "--output",
@@ -201,73 +259,166 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Validate parameters
-    is_valid, message = validate_parameters(
-        args.repo_path,
-        args.branch_name,
-        args.commit_a,
-        args.commit_b,
-    )
-
-    if not is_valid:
-        print(f"✗ Validation failed: {message}", file=sys.stderr)
-        sys.exit(1)
-
-    print(f"✓ {message}")
-    if args.commit_b is None:
-        commit_b = get_latest_commit(args.repo_path, args.branch_name)
-        if commit_b is None:
+    # Check if we're in dev-branch mode
+    if args.dev_branch is not None:
+        # Dev-branch mode: validate branches
+        if args.commit_a is not None:
             print(
-                "✗ Could not get latest commit for summarization",
+                "✗ Error: --dev-branch cannot be used with commit_a. "
+                "Use either --dev-branch or commit range mode.",
                 file=sys.stderr,
             )
             sys.exit(1)
-        print(f"  Using latest commit on branch '{args.branch_name}': {commit_b}")
-    else:
-        commit_b = args.commit_b
 
-    # Generate summaries if not skipped
-    if not args.skip_summarization:
-        try:
-            print("\n📝 Generating commit summaries...")
-            print(f"   Processing commits from {args.commit_a[:8]} to {commit_b[:8]}")
+        is_valid, message = validate_dev_branch_parameters(
+            args.repo_path,
+            args.branch_name,
+            args.dev_branch,
+        )
 
-            # Initialize services
-            git_repo = GitRepositoryImpl()
-            git_service = GitService(git_repo)
-            llm_agent = create_llm_agent()
-            diff_size_config = DiffSizeConfig(max_diff_size=args.max_diff_size)
-            summarization_service = SummarizationService(
-                git_service, llm_agent, diff_size_config=diff_size_config
-            )
-            batch_service = BatchSummarizationService(git_service, summarization_service)
+        if not is_valid:
+            print(f"✗ Validation failed: {message}", file=sys.stderr)
+            sys.exit(1)
 
-            # Process commits and generate summaries
-            batch_service.process_commits_range(
-                repo_path=args.repo_path,
-                commit_a=args.commit_a,
-                commit_b=commit_b,
-                output_dir=args.output,
-                skip_empty_merges=args.skip_empty_merges,
-            )
+        print(f"✓ {message}")
+        print(f"  Main branch: {args.branch_name}")
+        print(f"  Development branch: {args.dev_branch}")
 
-            print("✓ Summaries generated successfully!")
-            print(f"  Output directory: {args.output.absolute()}")
+        # Generate summaries if not skipped
+        if not args.skip_summarization:
+            try:
+                print("\n📝 Generating diff summary...")
+                print(
+                    f"   Analyzing diff from {args.branch_name} to {args.dev_branch}"
+                )
+
+                # Initialize services
+                git_repo = GitRepositoryImpl()
+                git_service = GitService(git_repo)
+                llm_agent = create_llm_agent()
+                diff_size_config = DiffSizeConfig(max_diff_size=args.max_diff_size)
+                summarization_service = SummarizationService(
+                    git_service, llm_agent, diff_size_config=diff_size_config
+                )
+
+                # Get the diff between merge base and dev branch head
+                merge_base, dev_branch_head, diff = git_service.get_dev_branch_diff(
+                    repo_path=args.repo_path,
+                    main_branch=args.branch_name,
+                    dev_branch=args.dev_branch,
+                )
+
+                print(f"   Merge base: {merge_base[:8]}")
+                print(f"   Dev branch head: {dev_branch_head[:8]}")
+                print("\n📄 Generating summary...\n")
+
+                # Generate summary
+                summary = summarization_service.summarize_diff(
+                    commit_a_hash=merge_base,
+                    commit_b_hash=dev_branch_head,
+                    diff=diff,
+                )
+
+                # Display summary in console
+                print("=" * 80)
+                print("DIFF SUMMARY")
+                print("=" * 80)
+                print(summary)
+                print("=" * 80)
+
+                print("\n✓ Summary generated successfully!")
+                sys.exit(0)
+
+            except ValueError as e:
+                print(f"✗ Configuration error: {e}", file=sys.stderr)
+                print(
+                    "  Hint: Set ANTHROPIC_API_KEY in .env file or environment",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            except Exception as e:
+                print(f"✗ Failed to generate summaries: {e}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            print("  (Skipping summarization as requested)")
             sys.exit(0)
-
-        except ValueError as e:
-            print(f"✗ Configuration error: {e}", file=sys.stderr)
+    else:
+        # Commit range mode: validate commits
+        if args.commit_a is None:
             print(
-                "  Hint: Set ANTHROPIC_API_KEY in .env file or environment",
+                "✗ Error: commit_a is required when --dev-branch is not specified.",
                 file=sys.stderr,
             )
             sys.exit(1)
-        except Exception as e:
-            print(f"✗ Failed to generate summaries: {e}", file=sys.stderr)
+
+        is_valid, message = validate_parameters(
+            args.repo_path,
+            args.branch_name,
+            args.commit_a,
+            args.commit_b,
+        )
+
+        if not is_valid:
+            print(f"✗ Validation failed: {message}", file=sys.stderr)
             sys.exit(1)
-    else:
-        print("  (Skipping summarization as requested)")
-        sys.exit(0)
+
+        print(f"✓ {message}")
+        if args.commit_b is None:
+            commit_b = get_latest_commit(args.repo_path, args.branch_name)
+            if commit_b is None:
+                print(
+                    "✗ Could not get latest commit for summarization",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            print(f"  Using latest commit on branch '{args.branch_name}': {commit_b}")
+        else:
+            commit_b = args.commit_b
+
+        # Generate summaries if not skipped
+        if not args.skip_summarization:
+            try:
+                print("\n📝 Generating commit summaries...")
+                print(f"   Processing commits from {args.commit_a[:8]} to {commit_b[:8]}")
+
+                # Initialize services
+                git_repo = GitRepositoryImpl()
+                git_service = GitService(git_repo)
+                llm_agent = create_llm_agent()
+                diff_size_config = DiffSizeConfig(max_diff_size=args.max_diff_size)
+                summarization_service = SummarizationService(
+                    git_service, llm_agent, diff_size_config=diff_size_config
+                )
+                batch_service = BatchSummarizationService(
+                    git_service, summarization_service
+                )
+
+                # Process commits and generate summaries
+                batch_service.process_commits_range(
+                    repo_path=args.repo_path,
+                    commit_a=args.commit_a,
+                    commit_b=commit_b,
+                    output_dir=args.output,
+                    skip_empty_merges=args.skip_empty_merges,
+                )
+
+                print("✓ Summaries generated successfully!")
+                print(f"  Output directory: {args.output.absolute()}")
+                sys.exit(0)
+
+            except ValueError as e:
+                print(f"✗ Configuration error: {e}", file=sys.stderr)
+                print(
+                    "  Hint: Set ANTHROPIC_API_KEY in .env file or environment",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            except Exception as e:
+                print(f"✗ Failed to generate summaries: {e}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            print("  (Skipping summarization as requested)")
+            sys.exit(0)
 
 
 if __name__ == "__main__":

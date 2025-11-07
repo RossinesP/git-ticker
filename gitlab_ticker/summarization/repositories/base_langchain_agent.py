@@ -4,7 +4,10 @@ from abc import ABC
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from gitlab_ticker.summarization.domain.value_objects import CommitSummaryInput
+from gitlab_ticker.summarization.domain.value_objects import (
+    CommitSummaryInput,
+    DiffSummaryInput,
+)
 from gitlab_ticker.summarization.repositories.interfaces import LLMAgentRepository
 
 if TYPE_CHECKING:
@@ -346,6 +349,114 @@ Diff Content:
 {diff.diff_content}
 
 Please analyze this commit and generate a markdown summary following the instructions provided."""
+
+        return prompt
+
+    def summarize_diff(self, input_data: DiffSummaryInput) -> str:
+        """
+        Generate a markdown summary of a diff between two commits.
+
+        Args:
+            input_data: Diff data including commit hashes and diff content
+
+        Returns:
+            Markdown-formatted summary of the diff
+
+        Raises:
+            RuntimeError: If the LLM API call fails
+        """
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+        try:
+            system_prompt = self._create_diff_system_prompt()
+            human_message_content = self._format_diff_input(input_data)
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=human_message_content),
+            ]
+
+            response = self._llm.invoke(messages)
+            # Handle different response types
+            content = response.content
+            if isinstance(content, str):
+                return content
+            elif isinstance(content, list):
+                # If content is a list, extract text from it
+                return " ".join(
+                    str(item) if isinstance(item, str) else str(item.get("text", ""))
+                    for item in content
+                )
+            else:
+                # Fallback: convert any other type to string
+                return str(content)  # type: ignore[unreachable]
+        except Exception as e:
+            raise RuntimeError(f"Failed to generate diff summary: {str(e)}") from e
+
+    @staticmethod
+    def _create_diff_system_prompt() -> str:
+        """Create the system prompt for diff summarization."""
+        return """You are an expert software engineer analyzing git diffs. \
+Your role is to analyze the diff between two commits and generate intelligent, \
+structured summaries in markdown format.
+
+Your task:
+1. Analyze the diff content between the two commits
+2. Identify the overall changes, features, or modifications
+3. Determine the type of changes:
+   - New feature: A new functionality or component is being added
+   - Bug fix: A bug or issue is being corrected
+   - Enhancement: An existing feature is being improved
+   - Upgrade/Dependency: Version updates or dependency changes
+   - Refactoring: Code restructuring without behavior changes
+   - Minor change: Small updates, documentation, or trivial changes
+
+4. Generate a structured summary following the exact format below.
+
+Output format:
+You MUST structure your response using exactly these 4 sections in markdown format:
+
+## Summary
+Provide a single sentence describing the overall changes between the two commits.
+
+## What
+Provide a brief summary of the features that were added/modified/removed. \
+For NEW FEATURES: Describe what the feature does and its main components. \
+For MINOR CHANGES (bug fixes, version upgrades, small fixes): Keep it very short and concise. \
+For MAJOR CHANGES (large enhancements, significant refactoring): Provide more detail about the \
+changes and their impact.
+
+## Where
+Provide a brief summary of the main files that were modified. Focus on the most important files \
+that help understand the scope of the change.
+
+## Notes
+Include any elements that might be important for proper operation or security. This includes:
+- Security considerations
+- Breaking changes or migration requirements
+- Configuration changes
+- Dependencies or environment requirements
+- Any operational concerns
+
+Important:
+- Use clean markdown formatting
+- Be concise but informative
+- Focus on the "what" and "why", not the "how" (unless it's a new feature architecture)
+- Do not prompt for further questions or comments
+- Adjust the level of detail based on the magnitude of the change
+- All sections must be present, even if some are brief"""
+
+    @staticmethod
+    def _format_diff_input(input_data: DiffSummaryInput) -> str:
+        """Format diff data into a prompt for the LLM."""
+        prompt = f"""Diff Information:
+
+From commit: {input_data.commit_a_hash}
+To commit: {input_data.commit_b_hash}
+
+Diff Content:
+{input_data.diff.diff_content}
+
+Please analyze this diff and generate a markdown summary following the instructions provided."""
 
         return prompt
 

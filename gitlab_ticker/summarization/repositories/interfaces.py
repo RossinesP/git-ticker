@@ -3,7 +3,10 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 
-from gitlab_ticker.summarization.domain.value_objects import CommitSummaryInput
+from gitlab_ticker.summarization.domain.value_objects import (
+    CommitSummaryInput,
+    DiffSummaryInput,
+)
 
 
 class LLMAgentRepository(ABC):
@@ -44,5 +47,24 @@ class LLMAgentRepository(ABC):
         raise NotImplementedError(
             "Tool calling not supported by this agent. "
             "Use summarize_commit instead or implement summarize_commit_with_tools."
+        )
+
+    def summarize_diff(self, input_data: DiffSummaryInput) -> str:
+        """
+        Generate a markdown summary of a diff between two commits.
+
+        Args:
+            input_data: Diff data including commit hashes and diff content
+
+        Returns:
+            Markdown-formatted summary of the diff
+
+        Note:
+            This method has a default implementation that raises NotImplementedError.
+            Subclasses should override it if they support diff summarization.
+        """
+        raise NotImplementedError(
+            "Diff summarization not supported by this agent. "
+            "Implement summarize_diff to support this feature."
         )
 

@@ -81,6 +81,90 @@ class GitService:
         """
         return self._git_repository.get_file_diff(repo_path, commit_hash, file_path)
 
+    def list_commits_from_dev_branch(
+        self, repo_path: Path, main_branch: str, dev_branch: str
+    ) -> tuple[Commit, ...]:
+        """
+        List commits from a development branch that are not in the main branch.
+
+        This finds the merge base between the two branches and returns all commits
+        from the development branch that are not in the main branch.
+
+        Args:
+            repo_path: Path to the git repository
+            main_branch: Name of the main branch
+            dev_branch: Name of the development branch
+
+        Returns:
+            Tuple of commits from the development branch ordered from oldest to newest
+        """
+        # Get the merge base between the two branches
+        merge_base = self._git_repository.get_merge_base(repo_path, main_branch, dev_branch)
+
+        # Get the latest commit on the development branch
+        result = subprocess.run(
+            ["git", "rev-parse", dev_branch],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        dev_branch_head = result.stdout.strip()
+
+        # List commits from merge_base to dev_branch_head
+        return self.list_commits_between(repo_path, merge_base, dev_branch_head)
+
+    def get_diff_between_commits(
+        self, repo_path: Path, commit_a: str, commit_b: str
+    ) -> CommitDiff:
+        """
+        Get the diff content between two commits.
+
+        Args:
+            repo_path: Path to the git repository
+            commit_a: Hash of the older commit
+            commit_b: Hash of the newer commit
+
+        Returns:
+            CommitDiff containing the diff content between the two commits
+        """
+        return self._git_repository.get_diff_between_commits(repo_path, commit_a, commit_b)
+
+    def get_dev_branch_diff(
+        self, repo_path: Path, main_branch: str, dev_branch: str
+    ) -> tuple[str, str, CommitDiff]:
+        """
+        Get the diff between a development branch and the main branch.
+
+        This finds the merge base (creation point) and the latest commit on the dev branch,
+        then returns the diff between them.
+
+        Args:
+            repo_path: Path to the git repository
+            main_branch: Name of the main branch
+            dev_branch: Name of the development branch
+
+        Returns:
+            Tuple of (merge_base_hash, dev_branch_head_hash, CommitDiff)
+        """
+        # Get the merge base between the two branches (creation point)
+        merge_base = self._git_repository.get_merge_base(repo_path, main_branch, dev_branch)
+
+        # Get the latest commit on the development branch
+        result = subprocess.run(
+            ["git", "rev-parse", dev_branch],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        dev_branch_head = result.stdout.strip()
+
+        # Get the diff between merge_base and dev_branch_head
+        diff = self.get_diff_between_commits(repo_path, merge_base, dev_branch_head)
+
+        return (merge_base, dev_branch_head, diff)
+
     def is_empty_merge_commit(self, repo_path: Path, commit_hash: str) -> bool:
         """
         Check if a commit is a merge commit with no file changes.

@@ -24,3 +24,12 @@ class BatchProcessingInput:
     commit_b: str
     output_dir: Path
 
+
+@dataclass(frozen=True)
+class DiffSummaryInput:
+    """Input data for diff summarization between two commits."""
+
+    commit_a_hash: str
+    commit_b_hash: str
+    diff: CommitDiff
+

@@ -6,7 +6,10 @@ from gitlab_ticker.git.domain.entities import CommitWithFiles
 from gitlab_ticker.git.domain.value_objects import CommitDiff, DiffSizeConfig
 from gitlab_ticker.git.services.file_filter_service import FileFilterService
 from gitlab_ticker.git.services.git_service import GitService
-from gitlab_ticker.summarization.domain.value_objects import CommitSummaryInput
+from gitlab_ticker.summarization.domain.value_objects import (
+    CommitSummaryInput,
+    DiffSummaryInput,
+)
 from gitlab_ticker.summarization.repositories.interfaces import LLMAgentRepository
 
 
@@ -92,6 +95,54 @@ class SummarizationService:
         except Exception as e:
             raise RuntimeError(
                 f"Failed to summarize commit {commit_hash}: {str(e)}"
+            ) from e
+
+    def summarize_diff(self, commit_a_hash: str, commit_b_hash: str, diff: CommitDiff) -> str:
+        """
+        Generate a markdown summary for a diff between two commits.
+
+        Args:
+            commit_a_hash: Hash of the older commit
+            commit_b_hash: Hash of the newer commit
+            diff: CommitDiff containing the diff content
+
+        Returns:
+            Markdown-formatted summary of the diff
+
+        Raises:
+            RuntimeError: If summarization fails
+        """
+        try:
+            input_data = DiffSummaryInput(
+                commit_a_hash=commit_a_hash,
+                commit_b_hash=commit_b_hash,
+                diff=diff,
+            )
+
+            # Check if diff is too large
+            diff_size = len(diff.diff_content)
+            is_diff_too_large = diff_size > self._diff_size_config.max_diff_size
+
+            if is_diff_too_large:
+                # For large diffs, we could implement tool calling if needed
+                # For now, we'll use a truncated version
+                truncated_diff = CommitDiff(
+                    commit_hash=diff.commit_hash,
+                    diff_content=diff.diff_content[: self._diff_size_config.max_diff_size]
+                    + "\n\n[Diff truncated due to size]",
+                )
+                input_data = DiffSummaryInput(
+                    commit_a_hash=commit_a_hash,
+                    commit_b_hash=commit_b_hash,
+                    diff=truncated_diff,
+                )
+
+            summary = self._llm_agent.summarize_diff(input_data)
+            return summary
+
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to summarize diff between {commit_a_hash} and {commit_b_hash}: {str(e)}"
             ) from e
 
     def _summarize_with_tools(

@@ -114,6 +114,79 @@ class BatchSummarizationService:
             input_data.output_dir,
         )
 
+    def process_dev_branch_commits(
+        self,
+        repo_path: Path,
+        main_branch: str,
+        dev_branch: str,
+        output_dir: Path,
+        skip_empty_merges: bool = False,
+    ) -> None:
+        """
+        Process commits from a development branch that are not in the main branch.
+
+        This finds the merge base between the two branches and processes all commits
+        from the development branch that are not in the main branch.
+
+        Args:
+            repo_path: Path to the git repository
+            main_branch: Name of the main branch
+            dev_branch: Name of the development branch
+            output_dir: Path to the output directory where commits_summaries/ will be created
+            skip_empty_merges: If True, skip merge commits that contain no file changes
+
+        Raises:
+            RuntimeError: If processing fails at any step
+        """
+        try:
+            # List all commits from the development branch
+            commits = self._git_service.list_commits_from_dev_branch(
+                repo_path, main_branch, dev_branch
+            )
+
+            if not commits:
+                return
+
+            # Filter out empty merge commits if requested
+            if skip_empty_merges:
+                filtered_commits: list[tuple[int, Commit]] = []
+                for commit in commits:
+                    if not self._git_service.is_empty_merge_commit(repo_path, commit.hash):
+                        filtered_commits.append((len(filtered_commits) + 1, commit))
+            else:
+                filtered_commits = [(idx + 1, commit) for idx, commit in enumerate(commits)]
+
+            if not filtered_commits:
+                return
+
+            # Create commits_summaries directory
+            commits_dir = output_dir / "commits_summaries"
+            commits_dir.mkdir(parents=True, exist_ok=True)
+
+            # Process each commit and write individual files
+            for sequence, commit in filtered_commits:
+                try:
+                    summary = self._summarization_service.summarize_commit(
+                        repo_path, commit.hash
+                    )
+                    self._write_commit_summary_file(
+                        commits_dir, sequence, commit.hash, summary
+                    )
+                except Exception as e:
+                    # Continue processing other commits even if one fails
+                    error_summary = (
+                        f"**Error**: Failed to summarize commit {commit.hash}: {str(e)}"
+                    )
+                    self._write_commit_summary_file(
+                        commits_dir, sequence, commit.hash, error_summary
+                    )
+
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to process commits from dev branch {dev_branch} "
+                f"relative to {main_branch}: {str(e)}"
+            ) from e
+
     @staticmethod
     def _write_commit_summary_file(
         commits_dir: Path,
