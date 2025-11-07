@@ -210,26 +210,40 @@ Your task:
    - Refactoring: Code restructuring without behavior changes
    - Minor change: Small updates, documentation, or trivial changes
 
-4. Generate an appropriate summary:
-   - For NEW FEATURES: Describe the architecture in broad strokes. \
-Explain what the feature does, its main components, and how it \
-integrates with the existing system. Keep it short and concise.
-   - For MINOR CHANGES (bug fixes, version upgrades, small fixes): \
-Keep it very short and concise. Just identify what was fixed or updated.
-   - For MAJOR CHANGES (large enhancements, significant refactoring): \
-Provide more detail about the changes, their impact, and the rationale.
+4. Generate a structured summary following the exact format below.
 
 Output format:
-- Use clean markdown formatting
-- Start with a brief one-line summary
-- Then provide details organized in sections if needed
-- Use bullet points for clarity
-- Be concise but informative
-- Focus on the "what" and "why", not the "how" \
-(unless it's a new feature architecture)
-- Do not prompt for further questions or comments.
+You MUST structure your response using exactly these 4 sections in markdown format:
 
-Remember: Adjust the level of detail based on the magnitude of the change."""
+## Summary
+Provide a single sentence describing the commit.
+
+## What
+Provide a brief summary of the features that were added/modified/removed. \
+For NEW FEATURES: Describe what the feature does and its main components. \
+For MINOR CHANGES (bug fixes, version upgrades, small fixes): Keep it very short and concise. \
+For MAJOR CHANGES (large enhancements, significant refactoring): Provide more detail about the \
+changes and their impact.
+
+## Where
+Provide a brief summary of the main files that were modified. Focus on the most important files \
+that help understand the scope of the change.
+
+## Notes
+Include any elements that might be important for proper operation or security. This includes:
+- Security considerations
+- Breaking changes or migration requirements
+- Configuration changes
+- Dependencies or environment requirements
+- Any operational concerns
+
+Important:
+- Use clean markdown formatting
+- Be concise but informative
+- Focus on the "what" and "why", not the "how" (unless it's a new feature architecture)
+- Do not prompt for further questions or comments
+- Adjust the level of detail based on the magnitude of the change
+- All sections must be present, even if some are brief"""
 
     @staticmethod
     def _create_system_prompt_with_tools() -> str:
@@ -258,24 +272,40 @@ configuration files, and files that seem most relevant based on the commit messa
    - Refactoring: Code restructuring without behavior changes
    - Minor change: Small updates, documentation, or trivial changes
 
-6. Generate an appropriate summary:
-   - For NEW FEATURES: Describe the architecture in broad strokes. \
-Explain what the feature does, its main components, and how it \
-integrates with the existing system. Keep it short and concise.
-   - For MINOR CHANGES (bug fixes, version upgrades, small fixes): \
-Keep it very short and concise. Just identify what was fixed or updated.
-   - For MAJOR CHANGES (large enhancements, significant refactoring): \
-Provide more detail about the changes, their impact, and the rationale.
+6. Generate a structured summary following the exact format below.
 
 Output format:
+You MUST structure your response using exactly these 4 sections in markdown format:
+
+## Summary
+Provide a single sentence describing the commit.
+
+## What
+Provide a brief summary of the features that were added/modified/removed. \
+For NEW FEATURES: Describe what the feature does and its main components. \
+For MINOR CHANGES (bug fixes, version upgrades, small fixes): Keep it very short and concise. \
+For MAJOR CHANGES (large enhancements, significant refactoring): Provide more detail about the \
+changes and their impact.
+
+## Where
+Provide a brief summary of the main files that were modified. Focus on the most important files \
+that help understand the scope of the change.
+
+## Notes
+Include any elements that might be important for proper operation or security. This includes:
+- Security considerations
+- Breaking changes or migration requirements
+- Configuration changes
+- Dependencies or environment requirements
+- Any operational concerns
+
+Important:
 - Use clean markdown formatting
-- Start with a brief one-line summary
-- Then provide details organized in sections if needed
-- Use bullet points for clarity
 - Be concise but informative
-- Focus on the "what" and "why", not the "how" \
-(unless it's a new feature architecture)
-- Do not prompt for further questions or comments.
+- Focus on the "what" and "why", not the "how" (unless it's a new feature architecture)
+- Do not prompt for further questions or comments
+- Adjust the level of detail based on the magnitude of the change
+- All sections must be present, even if some are brief
 
 Remember: Request diffs for the most important files first, then generate your summary based on \
 the changes you've examined. You don't need to request diffs for all files - focus on the ones \
