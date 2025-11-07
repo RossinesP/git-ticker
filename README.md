@@ -39,6 +39,10 @@ poetry install
 poetry shell
 ```
 
+4. Configure environment variables:
+   - Copy `.env.example` to `.env` (if it exists) or create a `.env` file
+   - Set the required API keys (see Configuration section below)
+
 ## Usage
 
 ### Commit Validation and Summarization Script
@@ -85,6 +89,54 @@ python validate_commits.py /path/to/repo main abc123 --skip-summarization
 **Exit Codes:**
 - `0`: All parameters are valid (and summaries generated if not skipped)
 - `1`: Validation failed or summarization error with error message
+
+## Configuration
+
+### Environment Variables
+
+The project uses environment variables for configuration. Create a `.env` file in the project root with the following variables:
+
+**LLM Provider Configuration:**
+- `LLM_PROVIDER`: Set to `"anthropic"` or `"openai"` to choose the LLM provider (default: `"anthropic"`)
+
+**Anthropic API Configuration:**
+- `ANTHROPIC_API_KEY`: Your Anthropic API key (required if using Anthropic)
+- `ANTHROPIC_MODEL`: Model name to use (default: `"claude-3-5-sonnet-20241022"`)
+
+**OpenAI API Configuration:**
+- `OPENAI_API_KEY`: Your OpenAI API key (required if using OpenAI)
+- `OPENAI_MODEL`: Model name to use (default: `"gpt-4-turbo-preview"`)
+
+**LangSmith Observability Configuration:**
+- `LANGCHAIN_API_KEY`: Your LangSmith API key (get it from https://smith.langchain.com/)
+- `LANGCHAIN_TRACING_V2`: Set to `"true"` to enable LangSmith tracing (optional, but recommended)
+- `LANGCHAIN_PROJECT`: Project name in LangSmith dashboard (optional, defaults to `"default"`)
+
+### Observability with LangSmith
+
+LangSmith provides comprehensive observability for LLM operations in this project. Once configured, it automatically traces:
+
+- All LLM API calls (Anthropic Claude and OpenAI)
+- Input messages and system prompts
+- LLM responses and outputs
+- Tool calls and function invocations
+- Performance metrics (latency, token usage, costs)
+- Errors and exceptions
+
+**Setup:**
+1. Sign up for a free account at https://smith.langchain.com/
+2. Get your API key from the LangSmith dashboard
+3. Add `LANGCHAIN_API_KEY` to your `.env` file
+4. Set `LANGCHAIN_TRACING_V2=true` to enable tracing
+5. Optionally set `LANGCHAIN_PROJECT` to organize traces in your dashboard
+
+**Benefits:**
+- **Debugging**: Inspect exact prompts and responses for each commit summarization
+- **Monitoring**: Track performance and costs across all LLM operations
+- **Optimization**: Identify slow or expensive operations
+- **Quality Assurance**: Review generated summaries and improve prompts
+
+The tracing works automatically with no code changes required - LangChain integrates seamlessly with LangSmith when the environment variables are set.
 
 ## Project Structure
 
