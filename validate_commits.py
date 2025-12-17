@@ -454,6 +454,9 @@ def main() -> None:
         else:
             commit_b = args.commit_b
 
+        # Ensure commit_b is not None for type checking
+        assert commit_b is not None, "commit_b must be set at this point"
+
         # Generate summaries if not skipped
         if not args.skip_summarization:
             try:

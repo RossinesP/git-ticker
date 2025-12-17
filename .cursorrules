@@ -23,11 +23,11 @@
 - **All code must be fully typed** with type hints (annotations)
 - All function parameters, return types, class attributes, and variables must have type annotations
 - Use `typing` module or built-in types (Python 3.12+) for type hints
-- **Every code change must be validated by both mypy and ruff before completion**
-- Run `poetry run mypy .` to check type correctness
+- **Every code change must be validated by both ty and ruff before completion**
+- Run `poetry run ty check` to check type correctness
 - Run `poetry run ruff check .` to check code quality and style
 - Run `poetry run ruff format .` to format code (optional, but recommended)
-- Fix all mypy errors and warnings before committing code
+- Fix all ty errors and warnings before committing code
 - Fix all ruff errors and warnings before committing code
 - If you need to ignore a specific type check, use `# type: ignore[error-code]` with a specific error code and a comment explaining why
 

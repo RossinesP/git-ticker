@@ -244,16 +244,16 @@ See `.cursorrules` for detailed architecture guidelines.
 
 ### Code Quality Tools
 
-The project uses **mypy** for type checking and **ruff** for linting and code formatting.
+The project uses **ty** for type checking and **ruff** for linting and code formatting.
 
-#### Type Checking with mypy
+#### Type Checking with ty
 
 Check type correctness:
 ```bash
-poetry run mypy .
+poetry run ty check
 ```
 
-All code must pass mypy type checks before committing. The project is configured with strict type checking enabled.
+All code must pass ty type checks before committing. The project is configured with strict type checking enabled.
 
 #### Linting and Formatting with ruff
 
@@ -267,7 +267,7 @@ Format code:
 poetry run ruff format .
 ```
 
-**Important**: Every code change must be validated by both mypy and ruff before completion. Fix all errors and warnings before committing code.
+**Important**: Every code change must be validated by both ty and ruff before completion. Fix all errors and warnings before committing code.
 
 ## License
 

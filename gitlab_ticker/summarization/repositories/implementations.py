@@ -82,8 +82,8 @@ class LangChainOpenAIAgent(BaseLangChainAgent):
         if not isinstance(model, str):
             raise ValueError("Model name must be a string")
 
-        self._llm = ChatOpenAI(
-            model=model,
+        self._llm = ChatOpenAI(  # type: ignore[call-arg]
+            model_name=model,
             temperature=0.3,  # Lower temperature for more consistent summaries
         )
 
