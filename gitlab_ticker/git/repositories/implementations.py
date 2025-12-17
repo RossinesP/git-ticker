@@ -1,6 +1,7 @@
 """Concrete implementation of Git repository operations."""
 
 import subprocess
+from datetime import datetime
 from pathlib import Path
 
 from gitlab_ticker.git.domain.entities import Commit, CommitWithFiles
@@ -47,7 +48,6 @@ class GitRepositoryImpl(GitRepository):
                 parts = line.split("|", 3)
                 if len(parts) == 4:
                     commit_hash, author, date_str, message = parts
-                    from datetime import datetime
 
                     commit_date = datetime.fromisoformat(date_str.replace(" ", "T"))
                     commits.append(
@@ -95,7 +95,6 @@ class GitRepositoryImpl(GitRepository):
                 raise ValueError(f"Invalid commit format: {commit_line}")
 
             commit_hash_parsed, author, date_str, message = parts
-            from datetime import datetime
 
             commit_date = datetime.fromisoformat(date_str.replace(" ", "T"))
 

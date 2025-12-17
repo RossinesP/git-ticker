@@ -12,6 +12,9 @@ from gitlab_ticker.summarization.repositories.interfaces import LLMAgentReposito
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
+else:
+    from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+    from langchain_core.tools import StructuredTool
 
 
 class BaseLangChainAgent(LLMAgentRepository, ABC):
@@ -35,8 +38,6 @@ class BaseLangChainAgent(LLMAgentRepository, ABC):
         Raises:
             RuntimeError: If the LLM API call fails
         """
-        from langchain_core.messages import HumanMessage, SystemMessage
-
         try:
             human_message = self._format_commit_input(input_data)
             messages = [
@@ -79,9 +80,6 @@ class BaseLangChainAgent(LLMAgentRepository, ABC):
         Raises:
             RuntimeError: If the LLM API call fails
         """
-        from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
-        from langchain_core.tools import StructuredTool
-
         try:
             # Create the tool for getting file diffs
             def get_file_diff_tool_func(file_path: str) -> str:
@@ -363,8 +361,6 @@ Please analyze this commit and generate a markdown summary following the instruc
         Raises:
             RuntimeError: If the LLM API call fails
         """
-        from langchain_core.messages import HumanMessage, SystemMessage
-
         try:
             system_prompt = self._create_diff_system_prompt()
             human_message_content = self._format_diff_input(input_data)

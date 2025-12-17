@@ -27,9 +27,27 @@
 - Run `poetry run ty check` to check type correctness
 - Run `poetry run ruff check .` to check code quality and style
 - Run `poetry run ruff format .` to format code (optional, but recommended)
+- Run `poetry run isort .` to check import ordering
+- Run `poetry run isort . --check-only --diff` to check import ordering without modifying files
 - Fix all ty errors and warnings before committing code
 - Fix all ruff errors and warnings before committing code
+- Fix all isort errors and warnings before committing code
 - If you need to ignore a specific type check, use `# type: ignore[error-code]` with a specific error code and a comment explaining why
+
+## Code Style: PEP 8 Compliance
+
+- **All code must follow PEP 8 style guidelines**
+- Imports must be placed at the top of the file, after module docstrings and before other code
+- Imports must never be placed inside functions, methods, or conditional blocks
+- **Import order is automatically enforced by isort**
+- Import order should follow PEP 8:
+  1. Standard library imports
+  2. Related third party imports
+  3. Local application/library specific imports
+- Use absolute imports when possible
+- Group imports with blank lines between groups
+- Use `TYPE_CHECKING` from `typing` for type-only imports to avoid circular dependencies
+- **Always run `poetry run isort .` after modifying imports to ensure consistent ordering**
 
 ## Architecture and Code Style Decisions
 

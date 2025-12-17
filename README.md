@@ -267,7 +267,26 @@ Format code:
 poetry run ruff format .
 ```
 
-**Important**: Every code change must be validated by both ty and ruff before completion. Fix all errors and warnings before committing code.
+#### Import Ordering with isort
+
+The project uses **isort** to ensure consistent import ordering across all Python files, following PEP 8 guidelines.
+
+Check import ordering:
+```bash
+poetry run isort . --check-only --diff
+```
+
+Format imports automatically:
+```bash
+poetry run isort .
+```
+
+**Import Order:**
+1. Standard library imports
+2. Third-party imports
+3. Local application/library specific imports (`gitlab_ticker`)
+
+**Important**: Every code change must be validated by ty, ruff, and isort before completion. Fix all errors and warnings before committing code. Always run `poetry run isort .` after modifying imports to ensure consistent ordering.
 
 ## License
 

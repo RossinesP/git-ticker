@@ -20,6 +20,12 @@ from dotenv import load_dotenv
 from gitlab_ticker.git.domain.value_objects import DiffSizeConfig
 from gitlab_ticker.git.repositories.implementations import GitRepositoryImpl
 from gitlab_ticker.git.services.git_service import GitService
+from gitlab_ticker.notifications.repositories.implementations import (
+    SlackNotificationRepositoryImpl,
+)
+from gitlab_ticker.notifications.services.notification_service import (
+    NotificationService,
+)
 from gitlab_ticker.summarization.repositories.factory import create_llm_agent
 from gitlab_ticker.summarization.services.batch_summarization_service import (
     BatchSummarizationService,
@@ -362,13 +368,6 @@ def main() -> None:
 
                     try:
                         print(f"\n📤 Sending summary to Slack channel #{args.slack_channel}...")
-
-                        from gitlab_ticker.notifications.repositories.implementations import (
-                            SlackNotificationRepositoryImpl,
-                        )
-                        from gitlab_ticker.notifications.services.notification_service import (
-                            NotificationService,
-                        )
 
                         # Load environment variables
                         _load_env_file()
