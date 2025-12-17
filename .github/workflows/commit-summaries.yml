@@ -1,0 +1,67 @@
+name: Generate Commit Summaries
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  generate-summaries:
+    runs-on: ubuntu-latest
+    
+    # Skip if this is the first push (new branch)
+    if: github.event.before != '0000000000000000000000000000000000000000'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history needed for commit analysis
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project
+        run: poetry install --no-interaction
+
+      - name: Generate commit summaries
+        env:
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
+          LANGCHAIN_TRACING_V2: ${{ vars.LANGCHAIN_TRACING_V2 }}
+          LANGCHAIN_PROJECT: ${{ vars.LANGCHAIN_PROJECT }}
+          LANGSMITH_ENDPOINT: ${{ vars.LANGSMITH_ENDPOINT }}
+        run: |
+          echo "Generating summaries for commits from ${{ github.event.before }} to ${{ github.event.after }}"
+          poetry run python validate_commits.py . main ${{ github.event.before }} ${{ github.event.after }} --output ./output
+
+      - name: Upload summaries as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: commit-summaries-${{ github.run_number }}
+          path: output/commits_summaries/
+          retention-days: 90
+          if-no-files-found: warn
+
