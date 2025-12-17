@@ -329,9 +329,7 @@ most relevant to understanding the commit's purpose."""
             file_changes_list.append(change_info)
 
         file_changes_text = (
-            "\n".join(file_changes_list)
-            if file_changes_list
-            else "No files changed"
+            "\n".join(file_changes_list) if file_changes_list else "No files changed"
         )
 
         # Format the prompt
@@ -474,9 +472,7 @@ Please analyze this diff and generate a markdown summary following the instructi
             file_changes_list.append(change_info)
 
         file_changes_text = (
-            "\n".join(file_changes_list)
-            if file_changes_list
-            else "No files changed"
+            "\n".join(file_changes_list) if file_changes_list else "No files changed"
         )
 
         # Format the prompt
@@ -497,4 +493,3 @@ important files that will help you understand the nature and impact of this comm
 Please analyze this commit and generate a markdown summary following the instructions provided."""
 
         return prompt
-

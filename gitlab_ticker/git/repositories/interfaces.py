@@ -82,9 +82,7 @@ class GitRepository(ABC):
         ...
 
     @abstractmethod
-    def get_diff_between_commits(
-        self, repo_path: Path, commit_a: str, commit_b: str
-    ) -> CommitDiff:
+    def get_diff_between_commits(self, repo_path: Path, commit_a: str, commit_b: str) -> CommitDiff:
         """
         Get the diff content between two commits.
 
@@ -97,4 +95,3 @@ class GitRepository(ABC):
             CommitDiff containing the diff content between the two commits
         """
         ...
-

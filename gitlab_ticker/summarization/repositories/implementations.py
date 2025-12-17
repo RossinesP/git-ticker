@@ -44,9 +44,7 @@ class LangChainClaudeAgent(BaseLangChainAgent):
                 "See .env.example for reference."
             )
 
-        model = model_name or os.getenv(
-            "ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022"
-        )
+        model = model_name or os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")
 
         if not isinstance(model, str):
             raise ValueError("Model name must be a string")
@@ -90,4 +88,3 @@ class LangChainOpenAIAgent(BaseLangChainAgent):
         )
 
         super().__init__()
-

@@ -72,7 +72,7 @@ python validate_commits.py <repo_path> <branch_name> <commit_a> [commit_b] [--ou
 Generate a single summary of all changes between a development branch and the main branch:
 
 ```bash
-python validate_commits.py <repo_path> <main_branch> --dev-branch <dev_branch> [--skip-summarization] [--max-diff-size MAX_SIZE]
+python validate_commits.py <repo_path> <main_branch> --dev-branch <dev_branch> [--skip-summarization] [--max-diff-size MAX_SIZE] [--send-to-slack] [--slack-channel CHANNEL]
 ```
 
 **Parameters:**
@@ -81,6 +81,8 @@ python validate_commits.py <repo_path> <main_branch> --dev-branch <dev_branch> [
 - `--dev-branch`: Name of the development branch. When specified, the script finds the merge base (creation point) between the two branches and generates a single summary of all changes from the merge base to the latest commit on the development branch
 - `--skip-summarization`: (Optional) Skip summarization and only validate parameters
 - `--max-diff-size`: (Optional) Maximum diff size in characters before truncation (default: 50000)
+- `--send-to-slack`: (Optional) Send the summary to a Slack channel (requires `--slack-channel`)
+- `--slack-channel`: (Optional) Slack channel name without the # prefix (required if `--send-to-slack` is set)
 
 **Note:** 
 - When using `--dev-branch`, `commit_a` and `commit_b` are not required
@@ -121,7 +123,34 @@ python validate_commits.py /path/to/repo main --dev-branch feature/new-feature
 
 # With custom max diff size
 python validate_commits.py /path/to/repo main --dev-branch feature/new-feature --max-diff-size 100000
+
+# Send summary to Slack channel
+python validate_commits.py /path/to/repo main --dev-branch feature/new-feature \
+  --send-to-slack --slack-channel team-updates
 ```
+
+**Slack Integration:**
+
+To send the summary to a Slack channel in dev-branch mode:
+
+```bash
+python validate_commits.py /path/to/repo main --dev-branch feature/new-feature \
+  --send-to-slack --slack-channel general
+```
+
+**Requirements:**
+- Set `SLACK_TOKEN` environment variable with your Slack Bot User OAuth Token
+- The bot must be invited to the target channel
+- Channel name should be without the # prefix (use `general` not `#general`)
+
+**How to get a Slack token:**
+1. Go to https://api.slack.com/apps
+2. Create a new app or select an existing one
+3. Navigate to "OAuth & Permissions"
+4. Add the `chat:write` bot token scope
+5. Install the app to your workspace
+6. Copy the "Bot User OAuth Token" (starts with `xoxb-`)
+7. Invite the bot to your channel: `/invite @your-bot-name`
 
 **Note:** In dev-branch mode, the summary is displayed directly in the console. The `--output` and `--skip-empty-merges` options are not applicable in this mode.
 
@@ -145,6 +174,9 @@ The project uses environment variables for configuration. Create a `.env` file i
 **OpenAI API Configuration:**
 - `OPENAI_API_KEY`: Your OpenAI API key (required if using OpenAI)
 - `OPENAI_MODEL`: Model name to use (default: `"gpt-4-turbo-preview"`)
+
+**Slack Notification Configuration:**
+- `SLACK_TOKEN`: Your Slack Bot User OAuth Token (required for Slack notifications)
 
 **LangSmith Observability Configuration:**
 - `LANGCHAIN_API_KEY`: Your LangSmith API key (get it from https://smith.langchain.com/)

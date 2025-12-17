@@ -193,12 +193,8 @@ class GitRepositoryImpl(GitRepository):
             )
             return result.stdout
         except subprocess.CalledProcessError as e:
-            error_msg = (
-                e.stderr.decode() if e.stderr else str(e)
-            )
-            raise RuntimeError(
-                f"Failed to get file diff for {file_path}: {error_msg}"
-            ) from e
+            error_msg = e.stderr.decode() if e.stderr else str(e)
+            raise RuntimeError(f"Failed to get file diff for {file_path}: {error_msg}") from e
 
     def get_merge_base(self, repo_path: Path, branch_a: str, branch_b: str) -> str:
         """
@@ -230,9 +226,7 @@ class GitRepositoryImpl(GitRepository):
                 f"{e.stderr.decode() if e.stderr else str(e)}"
             ) from e
 
-    def get_diff_between_commits(
-        self, repo_path: Path, commit_a: str, commit_b: str
-    ) -> CommitDiff:
+    def get_diff_between_commits(self, repo_path: Path, commit_a: str, commit_b: str) -> CommitDiff:
         """
         Get the diff content between two commits.
 
@@ -279,4 +273,3 @@ class GitRepositoryImpl(GitRepository):
                 return FileChangeType.COPIED
             case _:
                 return FileChangeType.MODIFIED  # Default fallback
-

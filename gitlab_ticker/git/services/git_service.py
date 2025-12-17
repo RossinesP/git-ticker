@@ -114,9 +114,7 @@ class GitService:
         # List commits from merge_base to dev_branch_head
         return self.list_commits_between(repo_path, merge_base, dev_branch_head)
 
-    def get_diff_between_commits(
-        self, repo_path: Path, commit_a: str, commit_b: str
-    ) -> CommitDiff:
+    def get_diff_between_commits(self, repo_path: Path, commit_a: str, commit_b: str) -> CommitDiff:
         """
         Get the diff content between two commits.
 
@@ -199,4 +197,3 @@ class GitService:
         except subprocess.CalledProcessError:
             # If we can't check, assume it's not an empty merge
             return False
-

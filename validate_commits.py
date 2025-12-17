@@ -10,9 +10,12 @@ Script to validate git repository parameters and generate commit summaries:
 """
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 from gitlab_ticker.git.domain.value_objects import DiffSizeConfig
 from gitlab_ticker.git.repositories.implementations import GitRepositoryImpl
@@ -24,6 +27,18 @@ from gitlab_ticker.summarization.services.batch_summarization_service import (
 from gitlab_ticker.summarization.services.summarization_service import (
     SummarizationService,
 )
+
+
+def _load_env_file() -> None:
+    """Load environment variables from .env file."""
+    # Try to find .env file in project root (parent of gitlab_ticker package)
+    project_root = Path(__file__).parent
+    env_file = project_root / ".env"
+    if env_file.exists():
+        load_dotenv(env_file)
+    else:
+        # Fallback: try current directory
+        load_dotenv()
 
 
 def is_git_repository(repo_path: Path) -> bool:
@@ -256,6 +271,16 @@ def main() -> None:
         default=50000,
         help="Maximum diff size in characters before using tool calling (default: 50000)",
     )
+    parser.add_argument(
+        "--send-to-slack",
+        action="store_true",
+        help="Send the summary to a Slack channel (only available in dev-branch mode)",
+    )
+    parser.add_argument(
+        "--slack-channel",
+        type=str,
+        help="Slack channel name (required if --send-to-slack is set)",
+    )
 
     args = parser.parse_args()
 
@@ -288,9 +313,7 @@ def main() -> None:
         if not args.skip_summarization:
             try:
                 print("\n📝 Generating diff summary...")
-                print(
-                    f"   Analyzing diff from {args.branch_name} to {args.dev_branch}"
-                )
+                print(f"   Analyzing diff from {args.branch_name} to {args.dev_branch}")
 
                 # Initialize services
                 git_repo = GitRepositoryImpl()
@@ -327,6 +350,62 @@ def main() -> None:
                 print("=" * 80)
 
                 print("\n✓ Summary generated successfully!")
+
+                # Send to Slack if requested
+                if args.send_to_slack:
+                    if not args.slack_channel:
+                        print(
+                            "\n✗ Error: --slack-channel is required when --send-to-slack is set",
+                            file=sys.stderr,
+                        )
+                        sys.exit(1)
+
+                    try:
+                        print(f"\n📤 Sending summary to Slack channel #{args.slack_channel}...")
+
+                        from gitlab_ticker.notifications.repositories.implementations import (
+                            SlackNotificationRepositoryImpl,
+                        )
+                        from gitlab_ticker.notifications.services.notification_service import (
+                            NotificationService,
+                        )
+
+                        # Load environment variables
+                        _load_env_file()
+
+                        # Get Slack token from environment
+                        slack_token = os.getenv("SLACK_TOKEN")
+                        if not slack_token:
+                            raise ValueError(
+                                "SLACK_TOKEN environment variable is required. "
+                                "Please set it in a .env file or as an environment variable. "
+                                "Get your token from https://api.slack.com/apps"
+                            )
+
+                        slack_repo = SlackNotificationRepositoryImpl(token=slack_token)
+                        notification_service = NotificationService(slack_repo)
+
+                        notification_service.send_summary_to_slack(
+                            summary=summary,
+                            channel_name=args.slack_channel,
+                        )
+
+                        print(f"✓ Summary sent successfully to #{args.slack_channel}!")
+
+                    except ValueError as e:
+                        print(f"\n✗ Configuration error: {e}", file=sys.stderr)
+                        print(
+                            "  Hint: Set SLACK_TOKEN in .env file or environment",
+                            file=sys.stderr,
+                        )
+                        sys.exit(1)
+                    except RuntimeError as e:
+                        print(f"\n✗ Failed to send to Slack: {e}", file=sys.stderr)
+                        sys.exit(1)
+                    except Exception as e:
+                        print(f"\n✗ Unexpected error sending to Slack: {e}", file=sys.stderr)
+                        sys.exit(1)
+
                 sys.exit(0)
 
             except ValueError as e:
@@ -389,9 +468,7 @@ def main() -> None:
                 summarization_service = SummarizationService(
                     git_service, llm_agent, diff_size_config=diff_size_config
                 )
-                batch_service = BatchSummarizationService(
-                    git_service, summarization_service
-                )
+                batch_service = BatchSummarizationService(git_service, summarization_service)
 
                 # Process commits and generate summaries
                 batch_service.process_commits_range(
@@ -423,4 +500,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

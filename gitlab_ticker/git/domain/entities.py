@@ -25,4 +25,3 @@ class CommitWithFiles:
     date: datetime
     message: str
     file_changes: tuple[FileChange, ...]
-

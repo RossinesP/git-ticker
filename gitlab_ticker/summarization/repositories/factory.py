@@ -51,4 +51,3 @@ def create_llm_agent(model_name: str | None = None) -> LLMAgentRepository:
             f"Invalid LLM_PROVIDER: {provider}. "
             "Supported values: 'anthropic', 'claude', 'openai', 'gpt'"
         )
-

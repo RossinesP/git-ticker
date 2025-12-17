@@ -57,4 +57,3 @@ class DiffSizeConfig:
     """Configuration for diff size limits."""
 
     max_diff_size: int = 50000  # Default: 50000 characters
-

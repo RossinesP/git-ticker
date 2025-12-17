@@ -12,6 +12,7 @@ langchain-anthropic = "^1.0.1"
 python-dotenv = "^1.2.1"
 langchain-openai = "^1.0.2"
 langsmith = "^0.4.41"
+slack-sdk = "^3.27.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -62,5 +63,6 @@ show_error_codes = true
 [[tool.mypy.overrides]]
 module = [
     "langchain.*",
+    "slack_sdk.*",
 ]
 ignore_missing_imports = true

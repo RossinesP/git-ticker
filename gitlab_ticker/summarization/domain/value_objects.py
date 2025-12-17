@@ -32,4 +32,3 @@ class DiffSummaryInput:
     commit_a_hash: str
     commit_b_hash: str
     diff: CommitDiff
-

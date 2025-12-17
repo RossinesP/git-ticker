@@ -93,9 +93,7 @@ class SummarizationService:
                 return summary
 
         except Exception as e:
-            raise RuntimeError(
-                f"Failed to summarize commit {commit_hash}: {str(e)}"
-            ) from e
+            raise RuntimeError(f"Failed to summarize commit {commit_hash}: {str(e)}") from e
 
     def summarize_diff(self, commit_a_hash: str, commit_b_hash: str, diff: CommitDiff) -> str:
         """
@@ -173,9 +171,7 @@ class SummarizationService:
 
         # Check if agent supports tool calling
         if hasattr(self._llm_agent, "summarize_commit_with_tools"):
-            return self._llm_agent.summarize_commit_with_tools(
-                input_data, get_file_diff_callback
-            )
+            return self._llm_agent.summarize_commit_with_tools(input_data, get_file_diff_callback)
         else:
             # Fallback: use standard approach even if large
             # This should not happen with BaseLangChainAgent, but handle gracefully
@@ -187,4 +183,3 @@ class SummarizationService:
                 ),
             )
             return self._llm_agent.summarize_commit(input_data_with_diff)
-

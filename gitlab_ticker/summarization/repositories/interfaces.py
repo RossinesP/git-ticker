@@ -67,4 +67,3 @@ class LLMAgentRepository(ABC):
             "Diff summarization not supported by this agent. "
             "Implement summarize_diff to support this feature."
         )
-

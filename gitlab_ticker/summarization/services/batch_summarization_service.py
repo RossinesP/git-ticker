@@ -49,9 +49,7 @@ class BatchSummarizationService:
         """
         try:
             # List all commits in the range
-            commits = self._git_service.list_commits_between(
-                repo_path, commit_a, commit_b
-            )
+            commits = self._git_service.list_commits_between(repo_path, commit_a, commit_b)
 
             if not commits:
                 return
@@ -75,17 +73,11 @@ class BatchSummarizationService:
             # Process each commit and write individual files
             for sequence, commit in filtered_commits:
                 try:
-                    summary = self._summarization_service.summarize_commit(
-                        repo_path, commit.hash
-                    )
-                    self._write_commit_summary_file(
-                        commits_dir, sequence, commit.hash, summary
-                    )
+                    summary = self._summarization_service.summarize_commit(repo_path, commit.hash)
+                    self._write_commit_summary_file(commits_dir, sequence, commit.hash, summary)
                 except Exception as e:
                     # Continue processing other commits even if one fails
-                    error_summary = (
-                        f"**Error**: Failed to summarize commit {commit.hash}: {str(e)}"
-                    )
+                    error_summary = f"**Error**: Failed to summarize commit {commit.hash}: {str(e)}"
                     self._write_commit_summary_file(
                         commits_dir, sequence, commit.hash, error_summary
                     )
@@ -95,9 +87,7 @@ class BatchSummarizationService:
                 f"Failed to process commits range {commit_a}..{commit_b}: {str(e)}"
             ) from e
 
-    def process_commits_range_with_input(
-        self, input_data: BatchProcessingInput
-    ) -> None:
+    def process_commits_range_with_input(self, input_data: BatchProcessingInput) -> None:
         """
         Process commits range using BatchProcessingInput dataclass.
 
@@ -166,17 +156,11 @@ class BatchSummarizationService:
             # Process each commit and write individual files
             for sequence, commit in filtered_commits:
                 try:
-                    summary = self._summarization_service.summarize_commit(
-                        repo_path, commit.hash
-                    )
-                    self._write_commit_summary_file(
-                        commits_dir, sequence, commit.hash, summary
-                    )
+                    summary = self._summarization_service.summarize_commit(repo_path, commit.hash)
+                    self._write_commit_summary_file(commits_dir, sequence, commit.hash, summary)
                 except Exception as e:
                     # Continue processing other commits even if one fails
-                    error_summary = (
-                        f"**Error**: Failed to summarize commit {commit.hash}: {str(e)}"
-                    )
+                    error_summary = f"**Error**: Failed to summarize commit {commit.hash}: {str(e)}"
                     self._write_commit_summary_file(
                         commits_dir, sequence, commit.hash, error_summary
                     )
@@ -211,4 +195,3 @@ class BatchSummarizationService:
             f.write(summary)
             if not summary.endswith("\n"):
                 f.write("\n")
-
