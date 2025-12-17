@@ -3,7 +3,7 @@
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-from gitlab_ticker.notifications.domain.value_objects import SlackChannel, SlackMessage
+from git_ticker.notifications.domain.value_objects import SlackChannel, SlackMessage
 
 
 class SlackNotificationRepositoryImpl:

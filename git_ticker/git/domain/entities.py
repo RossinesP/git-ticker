@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from gitlab_ticker.git.domain.value_objects import FileChange
+from git_ticker.git.domain.value_objects import FileChange
 
 
 @dataclass(frozen=True)

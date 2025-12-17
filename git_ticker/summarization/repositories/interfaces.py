@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 
-from gitlab_ticker.summarization.domain.value_objects import (
+from git_ticker.summarization.domain.value_objects import (
     CommitSummaryInput,
     DiffSummaryInput,
 )

@@ -1,0 +1,130 @@
+name: 'Git Ticker - AI Commit Summarizer'
+description: 'Generate AI-powered summaries for git commits using LLM agents (Anthropic Claude or OpenAI)'
+author: 'Pierre Rossinès'
+
+branding:
+  icon: 'git-commit'
+  color: 'purple'
+
+inputs:
+  mode:
+    description: 'Operation mode: "commit-range" or "dev-branch"'
+    required: true
+    default: 'dev-branch'
+  
+  repo_path:
+    description: 'Path to the git repository (defaults to current workspace)'
+    required: false
+    default: '.'
+  
+  main_branch:
+    description: 'Name of the main branch (e.g., main, master)'
+    required: true
+    default: 'main'
+  
+  dev_branch:
+    description: 'Development branch name (required for dev-branch mode)'
+    required: false
+  
+  commit_a:
+    description: 'Older commit hash (required for commit-range mode)'
+    required: false
+  
+  commit_b:
+    description: 'Newer commit hash (optional for commit-range mode, defaults to latest)'
+    required: false
+  
+  output_dir:
+    description: 'Output directory for summaries (commit-range mode only)'
+    required: false
+    default: './output'
+  
+  skip_empty_merges:
+    description: 'Skip merge commits with no file changes'
+    required: false
+    default: 'false'
+  
+  max_diff_size:
+    description: 'Maximum diff size in characters before truncation'
+    required: false
+    default: '50000'
+  
+  # LLM Configuration
+  llm_provider:
+    description: 'LLM provider: "anthropic" or "openai"'
+    required: false
+    default: 'anthropic'
+  
+  anthropic_api_key:
+    description: 'Anthropic API key (required if llm_provider is anthropic)'
+    required: false
+  
+  anthropic_model:
+    description: 'Anthropic model name'
+    required: false
+    default: 'claude-3-5-sonnet-20241022'
+  
+  openai_api_key:
+    description: 'OpenAI API key (required if llm_provider is openai)'
+    required: false
+  
+  openai_model:
+    description: 'OpenAI model name'
+    required: false
+    default: 'gpt-4-turbo-preview'
+  
+  # Slack Configuration
+  send_to_slack:
+    description: 'Send summary to Slack (dev-branch mode only)'
+    required: false
+    default: 'false'
+  
+  slack_token:
+    description: 'Slack Bot User OAuth Token'
+    required: false
+  
+  slack_channel:
+    description: 'Slack channel name (without #)'
+    required: false
+  
+  # LangSmith Configuration (optional)
+  langchain_api_key:
+    description: 'LangSmith API key for observability'
+    required: false
+  
+  langchain_project:
+    description: 'LangSmith project name'
+    required: false
+    default: 'gitlab-ticker'
+
+outputs:
+  summary:
+    description: 'Generated summary (dev-branch mode)'
+  output_path:
+    description: 'Path to output directory with summaries (commit-range mode)'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    INPUT_MODE: ${{ inputs.mode }}
+    INPUT_REPO_PATH: ${{ inputs.repo_path }}
+    INPUT_MAIN_BRANCH: ${{ inputs.main_branch }}
+    INPUT_DEV_BRANCH: ${{ inputs.dev_branch }}
+    INPUT_COMMIT_A: ${{ inputs.commit_a }}
+    INPUT_COMMIT_B: ${{ inputs.commit_b }}
+    INPUT_OUTPUT_DIR: ${{ inputs.output_dir }}
+    INPUT_SKIP_EMPTY_MERGES: ${{ inputs.skip_empty_merges }}
+    INPUT_MAX_DIFF_SIZE: ${{ inputs.max_diff_size }}
+    INPUT_SEND_TO_SLACK: ${{ inputs.send_to_slack }}
+    INPUT_SLACK_CHANNEL: ${{ inputs.slack_channel }}
+    LLM_PROVIDER: ${{ inputs.llm_provider }}
+    ANTHROPIC_API_KEY: ${{ inputs.anthropic_api_key }}
+    ANTHROPIC_MODEL: ${{ inputs.anthropic_model }}
+    OPENAI_API_KEY: ${{ inputs.openai_api_key }}
+    OPENAI_MODEL: ${{ inputs.openai_model }}
+    SLACK_TOKEN: ${{ inputs.slack_token }}
+    LANGCHAIN_API_KEY: ${{ inputs.langchain_api_key }}
+    LANGCHAIN_TRACING_V2: ${{ inputs.langchain_api_key && 'true' || 'false' }}
+    LANGCHAIN_PROJECT: ${{ inputs.langchain_project }}
+

@@ -1,10 +1,12 @@
-# GitLab Ticker
+# Git Ticker
 
-A Python project for tracking and analyzing GitLab repositories using Domain-Driven Development (DDD) architecture.
+A Python project for tracking and analyzing Git repositories using Domain-Driven Development (DDD) architecture.
+
+**Also available as a reusable GitHub Action!** See [GitHub Action Usage](#github-action-usage) below.
 
 ## Overview
 
-GitLab Ticker is designed to provide tools and services for working with GitLab repositories, including validation utilities and analysis capabilities. The project follows a clean architecture pattern with clear separation of concerns.
+Git Ticker is designed to provide tools and services for working with Git repositories, including validation utilities and analysis capabilities. The project follows a clean architecture pattern with clear separation of concerns.
 
 ## Features
 
@@ -158,7 +160,166 @@ python validate_commits.py /path/to/repo main --dev-branch feature/new-feature \
 - `0`: All parameters are valid (and summaries generated if not skipped)
 - `1`: Validation failed or summarization error with error message
 
-## Configuration
+## GitHub Action Usage
+
+This project is available as a reusable GitHub Action that you can use in your workflows.
+
+### Quick Start
+
+Add this to your workflow file (`.github/workflows/summarize.yml`):
+
+```yaml
+name: Summarize PR Changes
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for git history
+      
+      - name: Generate PR Summary
+        uses: RossinesP/git-ticker@v1
+        with:
+          mode: 'dev-branch'
+          main_branch: 'main'
+          dev_branch: ${{ github.head_ref }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+### Action Inputs
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `mode` | Operation mode: `commit-range` or `dev-branch` | Yes | `dev-branch` |
+| `repo_path` | Path to the git repository | No | `.` |
+| `main_branch` | Name of the main branch | Yes | `main` |
+| `dev_branch` | Development branch name (for `dev-branch` mode) | Conditional | - |
+| `commit_a` | Older commit hash (for `commit-range` mode) | Conditional | - |
+| `commit_b` | Newer commit hash (for `commit-range` mode) | No | Latest |
+| `output_dir` | Output directory for summaries | No | `./output` |
+| `skip_empty_merges` | Skip merge commits with no changes | No | `false` |
+| `max_diff_size` | Max diff size before truncation | No | `50000` |
+| `llm_provider` | LLM provider: `anthropic` or `openai` | No | `anthropic` |
+| `anthropic_api_key` | Anthropic API key | Conditional | - |
+| `anthropic_model` | Anthropic model name | No | `claude-3-5-sonnet-20241022` |
+| `openai_api_key` | OpenAI API key | Conditional | - |
+| `openai_model` | OpenAI model name | No | `gpt-4-turbo-preview` |
+| `send_to_slack` | Send summary to Slack | No | `false` |
+| `slack_token` | Slack Bot OAuth Token | Conditional | - |
+| `slack_channel` | Slack channel name (without #) | Conditional | - |
+| `langchain_api_key` | LangSmith API key (optional) | No | - |
+| `langchain_project` | LangSmith project name | No | `gitlab-ticker` |
+
+### Action Outputs
+
+| Output | Description |
+|--------|-------------|
+| `summary` | Generated summary (dev-branch mode) |
+| `output_path` | Path to output directory (commit-range mode) |
+
+### Example Workflows
+
+#### Dev-Branch Mode with Slack Notification
+
+```yaml
+name: PR Summary to Slack
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Generate and Send Summary
+        uses: RossinesP/git-ticker@v1
+        with:
+          mode: 'dev-branch'
+          main_branch: 'main'
+          dev_branch: ${{ github.head_ref }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          send_to_slack: 'true'
+          slack_token: ${{ secrets.SLACK_TOKEN }}
+          slack_channel: 'pr-reviews'
+```
+
+#### Commit Range Mode
+
+```yaml
+name: Summarize Release Commits
+
+on:
+  workflow_dispatch:
+    inputs:
+      from_commit:
+        description: 'Start commit hash'
+        required: true
+      to_commit:
+        description: 'End commit hash'
+        required: true
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Generate Commit Summaries
+        uses: RossinesP/git-ticker@v1
+        with:
+          mode: 'commit-range'
+          main_branch: 'main'
+          commit_a: ${{ github.event.inputs.from_commit }}
+          commit_b: ${{ github.event.inputs.to_commit }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          output_dir: './summaries'
+      
+      - name: Upload Summaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: commit-summaries
+          path: ./summaries
+```
+
+#### Using OpenAI Instead of Anthropic
+
+```yaml
+- name: Generate Summary with OpenAI
+  uses: RossinesP/git-ticker@v1
+  with:
+    mode: 'dev-branch'
+    main_branch: 'main'
+    dev_branch: ${{ github.head_ref }}
+    llm_provider: 'openai'
+    openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+    openai_model: 'gpt-4-turbo-preview'
+```
+
+### Required Secrets
+
+Configure these secrets in your repository settings:
+
+- `ANTHROPIC_API_KEY`: Your Anthropic API key (if using Anthropic)
+- `OPENAI_API_KEY`: Your OpenAI API key (if using OpenAI)
+- `SLACK_TOKEN`: Slack Bot OAuth Token (if using Slack notifications)
+- `LANGCHAIN_API_KEY`: LangSmith API key (optional, for observability)
+
+---
+
+## Local Installation & Configuration
 
 ### Environment Variables
 
@@ -214,7 +375,7 @@ The tracing works automatically with no code changes required - LangChain integr
 The project follows a Domain-Driven Development (DDD) architecture:
 
 ```
-gitlab_ticker/
+git_ticker/
   <domain_name>/
     domain/          # Domain entities and value objects
     repositories/    # Repository interfaces and implementations
@@ -284,7 +445,7 @@ poetry run isort .
 **Import Order:**
 1. Standard library imports
 2. Third-party imports
-3. Local application/library specific imports (`gitlab_ticker`)
+3. Local application/library specific imports (`git_ticker`)
 
 **Important**: Every code change must be validated by ty, ruff, and isort before completion. Fix all errors and warnings before committing code. Always run `poetry run isort .` after modifying imports to ensure consistent ordering.
 

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "gitlab-ticker"
+name = "git-ticker"
 version = "0.1.0"
 description = ""
 authors = ["Pierre Rossinès <pierre.rossines@gmail.com>"]
@@ -42,12 +42,12 @@ select = [
 ignore = []
 
 [tool.ruff.lint.isort]
-known-first-party = ["gitlab_ticker"]
+known-first-party = ["git_ticker"]
 
 [tool.isort]
 profile = "black"
 line_length = 100
-known_first_party = ["gitlab_ticker"]
+known_first_party = ["git_ticker"]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 skip_gitignore = true
 

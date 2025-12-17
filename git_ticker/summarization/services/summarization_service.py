@@ -2,15 +2,15 @@
 
 from pathlib import Path
 
-from gitlab_ticker.git.domain.entities import CommitWithFiles
-from gitlab_ticker.git.domain.value_objects import CommitDiff, DiffSizeConfig
-from gitlab_ticker.git.services.file_filter_service import FileFilterService
-from gitlab_ticker.git.services.git_service import GitService
-from gitlab_ticker.summarization.domain.value_objects import (
+from git_ticker.git.domain.entities import CommitWithFiles
+from git_ticker.git.domain.value_objects import CommitDiff, DiffSizeConfig
+from git_ticker.git.services.file_filter_service import FileFilterService
+from git_ticker.git.services.git_service import GitService
+from git_ticker.summarization.domain.value_objects import (
     CommitSummaryInput,
     DiffSummaryInput,
 )
-from gitlab_ticker.summarization.repositories.interfaces import LLMAgentRepository
+from git_ticker.summarization.repositories.interfaces import LLMAgentRepository
 
 
 class SummarizationService:

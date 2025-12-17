@@ -1,7 +1,7 @@
 """Service for orchestrating notification sending."""
 
-from gitlab_ticker.notifications.domain.value_objects import SlackChannel, SlackMessage
-from gitlab_ticker.notifications.repositories.implementations import (
+from git_ticker.notifications.domain.value_objects import SlackChannel, SlackMessage
+from git_ticker.notifications.repositories.implementations import (
     SlackNotificationRepositoryImpl,
 )
 

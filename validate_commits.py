@@ -17,27 +17,27 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from gitlab_ticker.git.domain.value_objects import DiffSizeConfig
-from gitlab_ticker.git.repositories.implementations import GitRepositoryImpl
-from gitlab_ticker.git.services.git_service import GitService
-from gitlab_ticker.notifications.repositories.implementations import (
+from git_ticker.git.domain.value_objects import DiffSizeConfig
+from git_ticker.git.repositories.implementations import GitRepositoryImpl
+from git_ticker.git.services.git_service import GitService
+from git_ticker.notifications.repositories.implementations import (
     SlackNotificationRepositoryImpl,
 )
-from gitlab_ticker.notifications.services.notification_service import (
+from git_ticker.notifications.services.notification_service import (
     NotificationService,
 )
-from gitlab_ticker.summarization.repositories.factory import create_llm_agent
-from gitlab_ticker.summarization.services.batch_summarization_service import (
+from git_ticker.summarization.repositories.factory import create_llm_agent
+from git_ticker.summarization.services.batch_summarization_service import (
     BatchSummarizationService,
 )
-from gitlab_ticker.summarization.services.summarization_service import (
+from git_ticker.summarization.services.summarization_service import (
     SummarizationService,
 )
 
 
 def _load_env_file() -> None:
     """Load environment variables from .env file."""
-    # Try to find .env file in project root (parent of gitlab_ticker package)
+    # Try to find .env file in project root (parent of git_ticker package)
     project_root = Path(__file__).parent
     env_file = project_root / ".env"
     if env_file.exists():

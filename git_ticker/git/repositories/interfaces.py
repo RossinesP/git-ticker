@@ -3,8 +3,8 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from gitlab_ticker.git.domain.entities import Commit, CommitWithFiles
-from gitlab_ticker.git.domain.value_objects import CommitDiff, CommitRange
+from git_ticker.git.domain.entities import Commit, CommitWithFiles
+from git_ticker.git.domain.value_objects import CommitDiff, CommitRange
 
 
 class GitRepository(ABC):

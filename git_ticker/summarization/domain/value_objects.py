@@ -3,8 +3,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from gitlab_ticker.git.domain.entities import CommitWithFiles
-from gitlab_ticker.git.domain.value_objects import CommitDiff
+from git_ticker.git.domain.entities import CommitWithFiles
+from git_ticker.git.domain.value_objects import CommitDiff
 
 
 @dataclass(frozen=True)

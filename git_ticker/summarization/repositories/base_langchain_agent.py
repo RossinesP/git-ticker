@@ -4,11 +4,11 @@ from abc import ABC
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from gitlab_ticker.summarization.domain.value_objects import (
+from git_ticker.summarization.domain.value_objects import (
     CommitSummaryInput,
     DiffSummaryInput,
 )
-from gitlab_ticker.summarization.repositories.interfaces import LLMAgentRepository
+from git_ticker.summarization.repositories.interfaces import LLMAgentRepository
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel

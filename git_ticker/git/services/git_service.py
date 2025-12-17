@@ -3,9 +3,9 @@
 import subprocess
 from pathlib import Path
 
-from gitlab_ticker.git.domain.entities import Commit, CommitWithFiles
-from gitlab_ticker.git.domain.value_objects import CommitDiff, CommitRange
-from gitlab_ticker.git.repositories.interfaces import GitRepository
+from git_ticker.git.domain.entities import Commit, CommitWithFiles
+from git_ticker.git.domain.value_objects import CommitDiff, CommitRange
+from git_ticker.git.repositories.interfaces import GitRepository
 
 
 class GitService:

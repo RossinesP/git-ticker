@@ -7,14 +7,14 @@ from dotenv import load_dotenv
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
 
-from gitlab_ticker.summarization.repositories.base_langchain_agent import (
+from git_ticker.summarization.repositories.base_langchain_agent import (
     BaseLangChainAgent,
 )
 
 
 def _load_env_file() -> None:
     """Load environment variables from .env file."""
-    # Try to find .env file in project root (parent of gitlab_ticker package)
+    # Try to find .env file in project root (parent of git_ticker package)
     project_root = Path(__file__).parent.parent.parent.parent
     env_file = project_root / ".env"
     if env_file.exists():

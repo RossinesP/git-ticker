@@ -5,16 +5,16 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from gitlab_ticker.summarization.repositories.implementations import (
+from git_ticker.summarization.repositories.implementations import (
     LangChainClaudeAgent,
     LangChainOpenAIAgent,
 )
-from gitlab_ticker.summarization.repositories.interfaces import LLMAgentRepository
+from git_ticker.summarization.repositories.interfaces import LLMAgentRepository
 
 
 def _load_env_file() -> None:
     """Load environment variables from .env file."""
-    # Try to find .env file in project root (parent of gitlab_ticker package)
+    # Try to find .env file in project root (parent of git_ticker package)
     project_root = Path(__file__).parent.parent.parent.parent
     env_file = project_root / ".env"
     if env_file.exists():

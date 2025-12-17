@@ -2,10 +2,10 @@
 
 from pathlib import Path
 
-from gitlab_ticker.git.domain.entities import Commit
-from gitlab_ticker.git.services.git_service import GitService
-from gitlab_ticker.summarization.domain.value_objects import BatchProcessingInput
-from gitlab_ticker.summarization.services.summarization_service import SummarizationService
+from git_ticker.git.domain.entities import Commit
+from git_ticker.git.services.git_service import GitService
+from git_ticker.summarization.domain.value_objects import BatchProcessingInput
+from git_ticker.summarization.services.summarization_service import SummarizationService
 
 
 class BatchSummarizationService:
