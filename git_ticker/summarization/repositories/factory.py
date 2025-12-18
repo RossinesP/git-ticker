@@ -24,13 +24,17 @@ def _load_env_file() -> None:
         load_dotenv()
 
 
-def create_llm_agent(model_name: str | None = None) -> LLMAgentRepository:
+def create_llm_agent(
+    model_name: str | None = None, template_path: Path | None = None
+) -> LLMAgentRepository:
     """
     Create an LLM agent instance based on configuration.
 
     Args:
         model_name: Optional model name override. If not provided, uses
                    LLM_PROVIDER and model-specific env vars.
+        template_path: Path to a custom summary template file.
+                      Defaults to the built-in template.
 
     Returns:
         LLM agent instance (Claude or OpenAI)
@@ -43,9 +47,9 @@ def create_llm_agent(model_name: str | None = None) -> LLMAgentRepository:
     provider = os.getenv("LLM_PROVIDER", "anthropic").lower()
 
     if provider == "anthropic" or provider == "claude":
-        return LangChainClaudeAgent(model_name=model_name)
+        return LangChainClaudeAgent(model_name=model_name, template_path=template_path)
     elif provider == "openai" or provider == "gpt":
-        return LangChainOpenAIAgent(model_name=model_name)
+        return LangChainOpenAIAgent(model_name=model_name, template_path=template_path)
     else:
         raise ValueError(
             f"Invalid LLM_PROVIDER: {provider}. "

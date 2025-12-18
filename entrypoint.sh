@@ -66,6 +66,11 @@ else
     fi
 fi
 
+# Custom summary template (applies to both modes)
+if [ -n "$INPUT_SUMMARY_TEMPLATE" ]; then
+    ARGS+=("--summary-template" "$INPUT_SUMMARY_TEMPLATE")
+fi
+
 # Validate LLM provider configuration
 if [ "$LLM_PROVIDER" = "anthropic" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
     echo "::error::anthropic_api_key is required when llm_provider is 'anthropic'"

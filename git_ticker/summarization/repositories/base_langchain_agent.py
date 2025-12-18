@@ -2,6 +2,7 @@
 
 from abc import ABC
 from collections.abc import Callable
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from git_ticker.summarization.domain.value_objects import (
@@ -9,6 +10,7 @@ from git_ticker.summarization.domain.value_objects import (
     DiffSummaryInput,
 )
 from git_ticker.summarization.repositories.interfaces import LLMAgentRepository
+from git_ticker.summarization.templates import DEFAULT_TEMPLATE_PATH
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
@@ -20,10 +22,38 @@ else:
 class BaseLangChainAgent(LLMAgentRepository, ABC):
     """Base class for LangChain-based commit summarization agents."""
 
-    def __init__(self) -> None:
-        """Initialize the base agent with common configuration."""
+    def __init__(self, template_path: Path | None = None) -> None:
+        """Initialize the base agent with common configuration.
+
+        Args:
+            template_path: Path to a custom summary template file.
+                          Defaults to the built-in template.
+        """
+        self._template_path = template_path or DEFAULT_TEMPLATE_PATH
+        self._output_format_template = self._load_output_format_template()
         self._system_prompt = self._create_system_prompt()
         self._llm: BaseChatModel  # Set by subclasses
+
+    def _load_output_format_template(self) -> str:
+        """Load the output format template from file.
+
+        Returns:
+            The content of the template file.
+
+        Raises:
+            FileNotFoundError: If the template file does not exist.
+            RuntimeError: If the template file cannot be read.
+        """
+        try:
+            return self._template_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"Summary template file not found: {self._template_path}"
+            ) from None
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to read summary template file: {self._template_path}: {e}"
+            ) from e
 
     def summarize_commit(self, input_data: CommitSummaryInput) -> str:
         """
@@ -193,10 +223,9 @@ class BaseLangChainAgent(LLMAgentRepository, ABC):
         except Exception as e:
             raise RuntimeError(f"Failed to generate commit summary: {str(e)}") from e
 
-    @staticmethod
-    def _create_system_prompt() -> str:
+    def _create_system_prompt(self) -> str:
         """Create the system prompt for the LLM agent."""
-        return """You are an expert software engineer analyzing git commits. \
+        return f"""You are an expert software engineer analyzing git commits. \
 Your role is to analyze commit information and generate intelligent, \
 structured summaries in markdown format.
 
@@ -214,42 +243,11 @@ Your task:
 4. Generate a structured summary following the exact format below.
 
 Output format:
-You MUST structure your response using exactly these 4 sections in markdown format:
+{self._output_format_template}"""
 
-## Summary
-Provide a single sentence describing the commit.
-
-## What
-Provide a brief summary of the features that were added/modified/removed. \
-For NEW FEATURES: Describe what the feature does and its main components. \
-For MINOR CHANGES (bug fixes, version upgrades, small fixes): Keep it very short and concise. \
-For MAJOR CHANGES (large enhancements, significant refactoring): Provide more detail about the \
-changes and their impact.
-
-## Where
-Provide a brief summary of the main files that were modified. Focus on the most important files \
-that help understand the scope of the change.
-
-## Notes
-Include any elements that might be important for proper operation or security. This includes:
-- Security considerations
-- Breaking changes or migration requirements
-- Configuration changes
-- Dependencies or environment requirements
-- Any operational concerns
-
-Important:
-- Use clean markdown formatting
-- Be concise but informative
-- Focus on the "what" and "why", not the "how" (unless it's a new feature architecture)
-- Do not prompt for further questions or comments
-- Adjust the level of detail based on the magnitude of the change
-- All sections must be present, even if some are brief"""
-
-    @staticmethod
-    def _create_system_prompt_with_tools() -> str:
+    def _create_system_prompt_with_tools(self) -> str:
         """Create the system prompt for the LLM agent when using tools."""
-        return """You are an expert software engineer analyzing git commits. \
+        return f"""You are an expert software engineer analyzing git commits. \
 Your role is to analyze commit information and generate intelligent, \
 structured summaries in markdown format.
 
@@ -276,37 +274,7 @@ configuration files, and files that seem most relevant based on the commit messa
 6. Generate a structured summary following the exact format below.
 
 Output format:
-You MUST structure your response using exactly these 4 sections in markdown format:
-
-## Summary
-Provide a single sentence describing the commit.
-
-## What
-Provide a brief summary of the features that were added/modified/removed. \
-For NEW FEATURES: Describe what the feature does and its main components. \
-For MINOR CHANGES (bug fixes, version upgrades, small fixes): Keep it very short and concise. \
-For MAJOR CHANGES (large enhancements, significant refactoring): Provide more detail about the \
-changes and their impact.
-
-## Where
-Provide a brief summary of the main files that were modified. Focus on the most important files \
-that help understand the scope of the change.
-
-## Notes
-Include any elements that might be important for proper operation or security. This includes:
-- Security considerations
-- Breaking changes or migration requirements
-- Configuration changes
-- Dependencies or environment requirements
-- Any operational concerns
-
-Important:
-- Use clean markdown formatting
-- Be concise but informative
-- Focus on the "what" and "why", not the "how" (unless it's a new feature architecture)
-- Do not prompt for further questions or comments
-- Adjust the level of detail based on the magnitude of the change
-- All sections must be present, even if some are brief
+{self._output_format_template}
 
 Remember: Request diffs for the most important files first, then generate your summary based on \
 the changes you've examined. You don't need to request diffs for all files - focus on the ones \
@@ -386,10 +354,9 @@ Please analyze this commit and generate a markdown summary following the instruc
         except Exception as e:
             raise RuntimeError(f"Failed to generate diff summary: {str(e)}") from e
 
-    @staticmethod
-    def _create_diff_system_prompt() -> str:
+    def _create_diff_system_prompt(self) -> str:
         """Create the system prompt for diff summarization."""
-        return """You are an expert software engineer analyzing git diffs. \
+        return f"""You are an expert software engineer analyzing git diffs. \
 Your role is to analyze the diff between two commits and generate intelligent, \
 structured summaries in markdown format.
 
@@ -407,37 +374,7 @@ Your task:
 4. Generate a structured summary following the exact format below.
 
 Output format:
-You MUST structure your response using exactly these 4 sections in markdown format:
-
-## Summary
-Provide a single sentence describing the overall changes between the two commits.
-
-## What
-Provide a brief summary of the features that were added/modified/removed. \
-For NEW FEATURES: Describe what the feature does and its main components. \
-For MINOR CHANGES (bug fixes, version upgrades, small fixes): Keep it very short and concise. \
-For MAJOR CHANGES (large enhancements, significant refactoring): Provide more detail about the \
-changes and their impact.
-
-## Where
-Provide a brief summary of the main files that were modified. Focus on the most important files \
-that help understand the scope of the change.
-
-## Notes
-Include any elements that might be important for proper operation or security. This includes:
-- Security considerations
-- Breaking changes or migration requirements
-- Configuration changes
-- Dependencies or environment requirements
-- Any operational concerns
-
-Important:
-- Use clean markdown formatting
-- Be concise but informative
-- Focus on the "what" and "why", not the "how" (unless it's a new feature architecture)
-- Do not prompt for further questions or comments
-- Adjust the level of detail based on the magnitude of the change
-- All sections must be present, even if some are brief"""
+{self._output_format_template}"""
 
     @staticmethod
     def _format_diff_input(input_data: DiffSummaryInput) -> str:

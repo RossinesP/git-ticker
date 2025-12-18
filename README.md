@@ -85,6 +85,7 @@ python validate_commits.py <repo_path> <main_branch> --dev-branch <dev_branch> [
 - `--max-diff-size`: (Optional) Maximum diff size in characters before truncation (default: 50000)
 - `--send-to-slack`: (Optional) Send the summary to a Slack channel (requires `--slack-channel`)
 - `--slack-channel`: (Optional) Slack channel name without the # prefix (required if `--send-to-slack` is set)
+- `--summary-template`: (Optional) Path to a custom summary template file (markdown). Defaults to the built-in template
 
 **Note:** 
 - When using `--dev-branch`, `commit_a` and `commit_b` are not required
@@ -213,6 +214,7 @@ jobs:
 | `send_to_slack` | Send summary to Slack | No | `false` |
 | `slack_token` | Slack Bot OAuth Token | Conditional | - |
 | `slack_channel` | Slack channel name (without #) | Conditional | - |
+| `summary_template` | Path to custom summary template file | No | Built-in |
 
 ### Action Outputs
 
@@ -305,6 +307,55 @@ jobs:
     openai_api_key: ${{ secrets.OPENAI_API_KEY }}
     openai_model: 'gpt-4-turbo-preview'
 ```
+
+### Custom Summary Templates
+
+You can customize the output format of generated summaries by providing your own template file. The template defines the structure and sections that the LLM should use when generating summaries.
+
+#### Using a Custom Template
+
+**CLI:**
+```bash
+python validate_commits.py /path/to/repo main --dev-branch feature/my-feature \
+  --summary-template /path/to/my-template.md
+```
+
+**GitHub Action:**
+```yaml
+- name: Generate Summary with Custom Template
+  uses: RossinesP/git-ticker@v1
+  with:
+    mode: 'dev-branch'
+    main_branch: 'main'
+    dev_branch: ${{ github.head_ref }}
+    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    summary_template: '.github/templates/summary-template.md'
+```
+
+#### Template Format
+
+The template file should contain instructions for the LLM about how to structure its output. Here's an example custom template:
+
+```markdown
+You MUST structure your response using exactly these sections in markdown format:
+
+## 🎯 Overview
+Provide a single sentence describing the changes.
+
+## 📝 Changes
+List the main changes made:
+- Feature additions
+- Bug fixes
+- Refactoring
+
+## 📁 Files Modified
+List the key files that were modified.
+
+## ⚠️ Important Notes
+Include any breaking changes, migration steps, or security considerations.
+```
+
+The default template is located at `git_ticker/summarization/templates/default_summary_template.md` and can be used as a reference.
 
 ### Required Secrets
 

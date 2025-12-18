@@ -27,12 +27,16 @@ def _load_env_file() -> None:
 class LangChainClaudeAgent(BaseLangChainAgent):
     """LangChain implementation using Claude for commit summarization."""
 
-    def __init__(self, model_name: str | None = None) -> None:
+    def __init__(
+        self, model_name: str | None = None, template_path: Path | None = None
+    ) -> None:
         """
         Initialize the Claude agent with API key from environment.
 
         Args:
             model_name: Optional model name override. Defaults to claude-3-5-sonnet-20241022
+            template_path: Path to a custom summary template file.
+                          Defaults to the built-in template.
         """
         _load_env_file()
 
@@ -54,18 +58,22 @@ class LangChainClaudeAgent(BaseLangChainAgent):
             temperature=0.3,  # Lower temperature for more consistent summaries
         )
 
-        super().__init__()
+        super().__init__(template_path=template_path)
 
 
 class LangChainOpenAIAgent(BaseLangChainAgent):
     """LangChain implementation using OpenAI for commit summarization."""
 
-    def __init__(self, model_name: str | None = None) -> None:
+    def __init__(
+        self, model_name: str | None = None, template_path: Path | None = None
+    ) -> None:
         """
         Initialize the OpenAI agent with API key from environment.
 
         Args:
             model_name: Optional model name override. Defaults to gpt-4-turbo-preview
+            template_path: Path to a custom summary template file.
+                          Defaults to the built-in template.
         """
         _load_env_file()
 
@@ -87,4 +95,4 @@ class LangChainOpenAIAgent(BaseLangChainAgent):
             temperature=0.3,  # Lower temperature for more consistent summaries
         )
 
-        super().__init__()
+        super().__init__(template_path=template_path)

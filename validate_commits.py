@@ -33,6 +33,7 @@ from git_ticker.summarization.services.batch_summarization_service import (
 from git_ticker.summarization.services.summarization_service import (
     SummarizationService,
 )
+from git_ticker.summarization.templates import DEFAULT_TEMPLATE_PATH
 
 
 def _load_env_file() -> None:
@@ -287,6 +288,15 @@ def main() -> None:
         type=str,
         help="Slack channel name (required if --send-to-slack is set)",
     )
+    parser.add_argument(
+        "--summary-template",
+        type=Path,
+        default=DEFAULT_TEMPLATE_PATH,
+        help=(
+            "Path to a custom summary template file (markdown). "
+            f"Defaults to the built-in template at {DEFAULT_TEMPLATE_PATH}"
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -324,7 +334,7 @@ def main() -> None:
                 # Initialize services
                 git_repo = GitRepositoryImpl()
                 git_service = GitService(git_repo)
-                llm_agent = create_llm_agent()
+                llm_agent = create_llm_agent(template_path=args.summary_template)
                 diff_size_config = DiffSizeConfig(max_diff_size=args.max_diff_size)
                 summarization_service = SummarizationService(
                     git_service, llm_agent, diff_size_config=diff_size_config
@@ -465,7 +475,7 @@ def main() -> None:
                 # Initialize services
                 git_repo = GitRepositoryImpl()
                 git_service = GitService(git_repo)
-                llm_agent = create_llm_agent()
+                llm_agent = create_llm_agent(template_path=args.summary_template)
                 diff_size_config = DiffSizeConfig(max_diff_size=args.max_diff_size)
                 summarization_service = SummarizationService(
                     git_service, llm_agent, diff_size_config=diff_size_config

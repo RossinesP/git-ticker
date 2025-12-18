@@ -87,6 +87,10 @@ inputs:
     description: 'Slack channel name (without #)'
     required: false
   
+  summary_template:
+    description: 'Path to a custom summary template file (markdown). Uses built-in template if not specified.'
+    required: false
+
 outputs:
   summary:
     description: 'Generated summary (dev-branch mode)'
@@ -114,4 +118,5 @@ runs:
     OPENAI_API_KEY: ${{ inputs.openai_api_key }}
     OPENAI_MODEL: ${{ inputs.openai_model }}
     SLACK_TOKEN: ${{ inputs.slack_token }}
+    INPUT_SUMMARY_TEMPLATE: ${{ inputs.summary_template }}
 
