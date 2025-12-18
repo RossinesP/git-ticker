@@ -213,8 +213,6 @@ jobs:
 | `send_to_slack` | Send summary to Slack | No | `false` |
 | `slack_token` | Slack Bot OAuth Token | Conditional | - |
 | `slack_channel` | Slack channel name (without #) | Conditional | - |
-| `langchain_api_key` | LangSmith API key (optional) | No | - |
-| `langchain_project` | LangSmith project name | No | `gitlab-ticker` |
 
 ### Action Outputs
 
@@ -315,7 +313,6 @@ Configure these secrets in your repository settings:
 - `ANTHROPIC_API_KEY`: Your Anthropic API key (if using Anthropic)
 - `OPENAI_API_KEY`: Your OpenAI API key (if using OpenAI)
 - `SLACK_TOKEN`: Slack Bot OAuth Token (if using Slack notifications)
-- `LANGCHAIN_API_KEY`: LangSmith API key (optional, for observability)
 
 ---
 

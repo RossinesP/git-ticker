@@ -87,16 +87,6 @@ inputs:
     description: 'Slack channel name (without #)'
     required: false
   
-  # LangSmith Configuration (optional)
-  langchain_api_key:
-    description: 'LangSmith API key for observability'
-    required: false
-  
-  langchain_project:
-    description: 'LangSmith project name'
-    required: false
-    default: 'gitlab-ticker'
-
 outputs:
   summary:
     description: 'Generated summary (dev-branch mode)'
@@ -124,7 +114,4 @@ runs:
     OPENAI_API_KEY: ${{ inputs.openai_api_key }}
     OPENAI_MODEL: ${{ inputs.openai_model }}
     SLACK_TOKEN: ${{ inputs.slack_token }}
-    LANGCHAIN_API_KEY: ${{ inputs.langchain_api_key }}
-    LANGCHAIN_TRACING_V2: ${{ inputs.langchain_api_key && 'true' || 'false' }}
-    LANGCHAIN_PROJECT: ${{ inputs.langchain_project }}
 
