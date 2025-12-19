@@ -19,6 +19,7 @@ slack-sdk = "^3.27.0"
 ruff = "^0.14.3"
 ty = "^0.0.2"
 isort = "^7.0.0"
+poetry-audit = "^0.9.0"
 
 [build-system]
 requires = ["poetry-core"]
